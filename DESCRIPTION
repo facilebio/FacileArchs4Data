@@ -1,34 +1,35 @@
 Package: FacileArchs4DataSet
 Type: Package
-Title: A FacileDataSet provider for the archs4 datasets.
+Title: Implements the FacileData API over ARCHS4 (v2) data objects.
 Version: 0.1.0
 Authors@R: c(
-    person("Steve", "Lianoglou", , "lianoglou@dnli.com", c("aut", "cre")),
-    person("Denali Therapeutics", role = c("cph", "fnd"))
-    )
-Description: This package defines a FacileArchs4DataSet subclass of a
-    FacileDataSet. This enables the direct use of the species-specific gene and
-    transcript level HDF5 data files from the ARHCS4 project as the assay data
-    files for the object and implements the facile data retrieval API around the
-    internal format of those files. There is no actual data provided within this
-    and THE USE OF THE ARCHS4 DATA IS SUBJECT TO THE LICENSING TERMS OF THE
-    ORIGINAL AUTHORS. 
-URL: https://github.com/facilebio/FacileArchs4DataSet, https://amp.pharm.mssm.edu/archs4
-BugReports: https://github.com/facilebio/FacileArchs4DataSet/issues
+    person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre")),
+    person("Maze Therapeutics", role = c("cph", "fnd")))
+    person("Aratus Informatics, LLC", role = c("cph", "fnd")))
+Description: Implements the FacileData API over the v2 ARHCS4 data files. This
+    involves code to speak to the hdf5 files provided by their download page,
+    as well as metadata (Ensembl v107) for the human and mouse data that the
+    children data packages can use to query and retrieve data from them.
+URL:
+    https://github.com/facilebio/FacileArchs4DataSet,
+    https://maayanlab.cloud/archs4/download.html,
+    https://github.com/facilebio/FacileArchs4HumanDataSet,
+    https://github.com/facilebio/FacileArchs4MouseDataSet
+BugReports:
+    https://github.com/facilebio/FacileArchs4DataSet/issues
 Depends:
     FacileData
 Imports:
     checkmate,
     dplyr,
-    edgeR,
-    jsonlite,
     rhdf5,
-    RSQLite,
-    tidyr
+    tidyr,
+    yaml
 Suggests:
+    rmarkdown,
     testthat
 Remotes:
-    facilebio/FacileArchs4DataSet
+    facilebio/FacileData
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

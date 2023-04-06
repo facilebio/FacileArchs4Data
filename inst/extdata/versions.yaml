@@ -1,0 +1,10 @@
+# current ARCHS4 version
+current: v2.1.2
+
+# metadata about the archs4 versions
+versions:
+  v2.1.2:
+    ensembl: v107
+    assembly:
+      human: GRCh38
+      mouse: GRCm39
