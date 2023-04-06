@@ -34,8 +34,7 @@ FacileArchs4DataSet::build(
   species = "human")
 ```
 
-This will build the `FacileArchs4HumanDataSet` package in the
-`/path/to/package/parentdir/FacileArchs4HumanDataSet` directory.
+This will create a `/path/to/repository/dir/human` directory that can be used to instantiate a `FacileArcsh4DataSet` that can be used in the facilebio ecosystem.
 
 ## Data Exploration
 
