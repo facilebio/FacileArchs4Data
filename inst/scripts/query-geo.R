@@ -1,6 +1,6 @@
 # datasets of interest related to Legouis et al. 2020
 # library(rhdf5)
-# library(dplyr)
+library(dplyr)
 
 devtools::load_all(".")
 leg.ids <- c(
@@ -15,9 +15,14 @@ h5 <- list(
 
 
 a4hs <- Archs4Client$new(h5$human)
+
 a4mm <- Archs4Client$new(h5$mouse)
 
-genes <- .hdf5_group_load_table(h5$human, "meta/genes")
-samples <- .hdf5_group_load_table(h5$human, "meta/samples")
+
+GSE126805 <- filter(a4hs$samples, series_id == "GSE126805")
+GSE151167 <- filter(a4mm$samples, series_id == "GSE151167")
+GSE149739 <- filter(a4mm$samples, series_id == "GSE149739")
+
+se <- biocbox(GSE149739, "SummarizedExperiment")
 
 

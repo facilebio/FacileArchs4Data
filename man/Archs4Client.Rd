@@ -20,7 +20,7 @@ Thin wrapper to Archs4 dataset
 \if{latex}{\out{\hypertarget{method-Archs4Client-new}{}}}
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$new(path, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$new(path, ..., sample_columns = NULL)}\if{html}{\out{</div>}}
 }
 
 }

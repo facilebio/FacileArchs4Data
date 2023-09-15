@@ -1,7 +1,7 @@
 Package: FacileArchs4DataSet
 Type: Package
 Title: Implements the FacileData API over ARCHS4 (v2) data objects.
-Version: 0.1.0
+Version: 0.1.1
 Authors@R: c(
     person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre")),
     person("Maze Therapeutics", role = c("cph", "fnd")))
@@ -26,7 +26,9 @@ Imports:
     tidyr,
     yaml
 Suggests:
+    edgeR,
     rmarkdown,
+    SummarizedExperiment,
     testthat
 Remotes:
     facilebio/FacileData

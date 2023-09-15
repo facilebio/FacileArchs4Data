@@ -11,7 +11,9 @@ Archs4Client <- R6::R6Class(
     initialize = function(path, ..., sample_columns = NULL) {
       checkmate::assert_file_exists(path, "r", extension = "h5")
       self$path <- path
-      self$samples <- .load_archs4_samples(path, columns = sample_columns)
+      self$samples <- set_fds(
+        .load_archs4_samples(path, columns = sample_columns),
+        self)
       self$features <- .load_archs4_features(path)
     }
   ),
@@ -43,7 +45,9 @@ Archs4Client <- R6::R6Class(
       "extract_protocol_ch1",
       "characteristics_ch1")
   }
-  .hdf5_group_load_table(path, "meta/samples", columns = columns)
+  out <- .hdf5_group_load_table(path, "meta/samples", columns = columns)
+  class(out) <- c("archs4_client_facile_frame", class(out))
+  out
 }
 
 .hdf5_group_info <- function(x, group = "meta/genes") {
