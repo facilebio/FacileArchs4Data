@@ -12,9 +12,7 @@ Description: Implements the FacileData API over the v2 ARHCS4 data files. This
     children data packages can use to query and retrieve data from them.
 URL:
     https://github.com/facilebio/FacileArchs4DataSet,
-    https://maayanlab.cloud/archs4/download.html,
-    https://github.com/facilebio/FacileArchs4HumanDataSet,
-    https://github.com/facilebio/FacileArchs4MouseDataSet
+    https://maayanlab.cloud/archs4/download.html
 BugReports:
     https://github.com/facilebio/FacileArchs4DataSet/issues
 Depends:
