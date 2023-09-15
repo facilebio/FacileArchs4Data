@@ -4,7 +4,6 @@ Title: Implements the FacileData API over ARCHS4 (v2) data objects.
 Version: 0.1.1
 Authors@R: c(
     person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre")),
-    person("Maze Therapeutics", role = c("cph", "fnd")))
     person("Aratus Informatics, LLC", role = c("cph", "fnd")))
 Description: Implements the FacileData API over the v2 ARHCS4 data files. This
     involves code to speak to the hdf5 files provided by their download page,
