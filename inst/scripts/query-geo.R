@@ -15,7 +15,6 @@ h5 <- list(
 
 
 a4hs <- Archs4Client$new(h5$human)
-
 a4mm <- Archs4Client$new(h5$mouse)
 
 
@@ -24,5 +23,11 @@ GSE151167 <- filter(a4mm$samples, series_id == "GSE151167")
 GSE149739 <- filter(a4mm$samples, series_id == "GSE149739")
 
 se <- biocbox(GSE149739, "SummarizedExperiment")
+theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 
+# data from Humphreys lab, should have 59 samplesn across mouse and human
+GSE199437 <- list(
+  mouse = filter(a4mm$samples, series_id == "GSE199437"),  # 46
+  human = filter(a4hs$samples, series_id == "GSE199437"))  # 9
+sapply(GSE199437, nrow) |> sum() # 55
 
