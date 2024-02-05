@@ -1,3 +1,5 @@
+
+
 # datasets of interest related to Legouis et al. 2020
 # library(rhdf5)
 library(dplyr)
@@ -30,4 +32,14 @@ GSE199437 <- list(
   mouse = filter(a4mm$samples, series_id == "GSE199437"),  # 46
   human = filter(a4hs$samples, series_id == "GSE199437"))  # 9
 sapply(GSE199437, nrow) |> sum() # 55
+
+# DRUG-seq
+
+# Should have 768 samples
+GSE120920 <- filter(a4hs$samples, series_id == "GSE120920") # 768!
+y <- biocbox(GSE120920)
+# check mt reads
+is.mt <- which(grepl("^mt-", y$features$name, ignore.case = TRUE))
+
+pmt <- apply(y$counts, 2, function(x) sum(x[is.mt]) /  sum(x))
 
