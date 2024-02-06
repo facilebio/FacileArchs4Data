@@ -10,7 +10,7 @@ biocbox.archs4_client_facile_frame <- function(
     features <- a4c$features
   }
   assert_tibble(features)
-  assert_subset(names(features), c("h5idx", "ensembl_gene_id", "biotype", "symbol"))
+  assert_subset(c("h5idx", "ensembl_gene_id", "biotype", "symbol"),  names(features))
 
   counts <- rhdf5::h5read(
     a4c$path,
