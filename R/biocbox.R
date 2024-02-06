@@ -5,7 +5,7 @@ biocbox.archs4_client_facile_frame <- function(
     sample_covariates = NULL, ...) {
   a4c <- assert_class(fds(x), "Archs4Client")
   class <- assert_choice(class, c("list", "DGEList", "SummarizedExperiment"))
-  assert_int(x$h5idx)
+  assert_integerish(x$h5idx)
   if (is.null(features)) {
     features <- a4c$features
   }
