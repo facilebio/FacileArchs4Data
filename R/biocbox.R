@@ -18,7 +18,7 @@ biocbox.archs4_client_facile_frame <- function(
     index = list(x$h5idx, features$h5idx)) |>
     t()
   rownames(counts) <- features$feature_id
-  colnames(counts) <- x$sample
+  colnames(counts) <- x$sample_id
 
   # Let's work with the sample frame we have, not the one we think we have, ie.
   # we may have manipulated / cleaned this up before passing it in here.
