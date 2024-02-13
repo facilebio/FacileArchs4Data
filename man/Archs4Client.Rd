@@ -2,11 +2,40 @@
 % Please edit documentation in R/Archs4Client.R
 \name{Archs4Client}
 \alias{Archs4Client}
-\title{Thin wrapper to Archs4 dataset}
+\title{Thin wrapper to the hdf4 files of an Archs4 dataset.}
 \description{
-Thin wrapper to Archs4 dataset
+Thin wrapper to the hdf4 files of an Archs4 dataset.
 
-Thin wrapper to Archs4 dataset
+Thin wrapper to the hdf4 files of an Archs4 dataset.
+}
+\details{
+To make your life easy, store the "equally versioned" mouse and human
+datasets in a single directory with the value of \code{species} in the filename.
+You can put new/old h5 files in different directories, then load the dataset
+by specifying simply the species. See \strong{Examples} for examples.
+}
+\examples{
+
+## ------------------------------------------------
+## Method `Archs4Client$new`
+## ------------------------------------------------
+
+\dontrun{
+options(archs4.data_dir = "/path/to/directory/with/hdf5-count-files")
+a4m <- Archs4Client("mouse")
+a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
+}
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{path}}{the filepath to the species-specific hdf5 data object}
+
+\item{\code{samples}}{the facile_frame of the samples in this object}
+
+\item{\code{features}}{the tibble of features (genes) in this dataset.}
+}
+\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -19,8 +48,47 @@ Thin wrapper to Archs4 dataset
 \if{html}{\out{<a id="method-Archs4Client-new"></a>}}
 \if{latex}{\out{\hypertarget{method-Archs4Client-new}{}}}
 \subsection{Method \code{new()}}{
+Create a new Archs4Client object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$new(path, ..., sample_columns = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$new(
+  species = c("human", "mouse"),
+  ...,
+  path = NULL,
+  directory = getOption("archs4.data_dir", NULL),
+  sample_columns = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{species}}{\code{"mouse"} or \code{"human"}}
+
+\item{\code{...}}{stuff}
+
+\item{\code{path}}{the full path to the h5 file to load}
+
+\item{\code{directory}}{the parent directory that stores the species-specific
+expression datasets. Defaults to \code{getOption("archs4.data_dir")}. To make
+your life easier, you can set this option in your \verb{~/.Rprofile}}
+
+\item{\code{sample_columns}}{wut?}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a new Archs4Client
+}
+\subsection{Examples}{
+\if{html}{\out{<div class="r example copy">}}
+\preformatted{\dontrun{
+options(archs4.data_dir = "/path/to/directory/with/hdf5-count-files")
+a4m <- Archs4Client("mouse")
+a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
+}
+}
+\if{html}{\out{</div>}}
+
 }
 
 }

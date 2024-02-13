@@ -10,7 +10,7 @@ biocbox.archs4_client_facile_frame <- function(
     features <- a4c$features
   }
   assert_tibble(features)
-  assert_subset(c("h5idx", "ensembl_gene_id", "biotype", "symbol"),  names(features))
+  assert_subset(c("h5idx", "feature_id", "meta", "name"),  names(features))
 
   counts <- rhdf5::h5read(
     a4c$path,
@@ -33,11 +33,8 @@ biocbox.archs4_client_facile_frame <- function(
     counts = counts,
     features = features |>
       as.data.frame() |>
-      dplyr::transmute(
-        feature_id = ensembl_gene_id,
+      dplyr::mutate(
         feature_type = "ensgid",
-        name = symbol,
-        meta = biotype,
         source = "ensembl_v107"),
     samples = as.data.frame(x))
   rownames(out$features) <- rownames(counts)
