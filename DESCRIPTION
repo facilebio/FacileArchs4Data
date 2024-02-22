@@ -8,10 +8,13 @@ Authors@R: c(
 Description: Implements the FacileData API over the v2 ARHCS4 data files. This
     involves code to speak to the hdf5 files provided by their download page,
     as well as metadata (Ensembl v107) for the human and mouse data that the
-    children data packages can use to query and retrieve data from them.
+    children data packages can use to query and retrieve data from them. There
+    is an official python package (archs4py) developed by the MayaanLab that
+    could be used as a handy reference (see links below)
 URL:
     https://github.com/facilebio/FacileArchs4DataSet,
-    https://maayanlab.cloud/archs4/download.html
+    https://maayanlab.cloud/archs4/download.html,
+    https://github.com/MaayanLab/archs4py
 BugReports:
     https://github.com/facilebio/FacileArchs4DataSet/issues
 Depends:

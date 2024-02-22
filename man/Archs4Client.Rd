@@ -2,13 +2,16 @@
 % Please edit documentation in R/Archs4Client.R
 \name{Archs4Client}
 \alias{Archs4Client}
-\title{Thin wrapper to the hdf4 files of an Archs4 dataset.}
+\title{Thin wrapper to the hdf5 files of an Archs4 dataset.}
 \description{
-Thin wrapper to the hdf4 files of an Archs4 dataset.
+Thin wrapper to the hdf5 files of an Archs4 dataset.
 
-Thin wrapper to the hdf4 files of an Archs4 dataset.
+Thin wrapper to the hdf5 files of an Archs4 dataset.
 }
 \details{
+Create a wrapper to the hdf5 files that are directly downloaded from the
+archs4 website.
+
 To make your life easy, store the "equally versioned" mouse and human
 datasets in a single directory with the value of \code{species} in the filename.
 You can put new/old h5 files in different directories, then load the dataset
@@ -22,9 +25,12 @@ by specifying simply the species. See \strong{Examples} for examples.
 
 \dontrun{
 options(archs4.data_dir = "/path/to/directory/with/hdf5-count-files")
-a4m <- Archs4Client("mouse")
-a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
+a4m <- Archs4Client$new("mouse")
+a4h <- Archs4Client$new("/path/to/human_gene_v2.2.h5")
 }
+}
+\seealso{
+https://github.com/MaayanLab/archs4py/blob/main/archs4py/data.py#L27
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -34,6 +40,8 @@ a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
 \item{\code{samples}}{the facile_frame of the samples in this object}
 
 \item{\code{features}}{the tibble of features (genes) in this dataset.}
+
+\item{\code{species}}{is this thing mouse or human?}
 }
 \if{html}{\out{</div>}}
 }
@@ -41,6 +49,7 @@ a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Archs4Client-new}{\code{Archs4Client$new()}}
+\item \href{#method-Archs4Client-search}{\code{Archs4Client$search()}}
 \item \href{#method-Archs4Client-clone}{\code{Archs4Client$clone()}}
 }
 }
@@ -51,7 +60,7 @@ a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
 Create a new Archs4Client object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Archs4Client$new(
-  species = c("human", "mouse"),
+  species,
   ...,
   path = NULL,
   directory = getOption("archs4.data_dir", NULL),
@@ -83,14 +92,63 @@ a new Archs4Client
 \if{html}{\out{<div class="r example copy">}}
 \preformatted{\dontrun{
 options(archs4.data_dir = "/path/to/directory/with/hdf5-count-files")
-a4m <- Archs4Client("mouse")
-a4h <- Archs4Client("/path/to/human_gene_v2.2.h5")
+a4m <- Archs4Client$new("mouse")
+a4h <- Archs4Client$new("/path/to/human_gene_v2.2.h5")
 }
 }
 \if{html}{\out{</div>}}
 
 }
 
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Archs4Client-search"></a>}}
+\if{latex}{\out{\hypertarget{method-Archs4Client-search}{}}}
+\subsection{Method \code{search()}}{
+Find samples that match a regular expression in any of the descriptive
+columns.
+
+This function is fashioned after the archs4py.meta() function.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$search(
+  regex,
+  meta_fields = NULL,
+  remove_sc = TRUE,
+  ...,
+  scrub_search = FALSE,
+  ignore.case = TRUE,
+  threshold_sc = 0.5
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{regex}}{the regular expression to use for search}
+
+\item{\code{meta_fields}}{which columns in the dataset to search against, defaults
+to a set of columns defined in the archs4py package}
+
+\item{\code{remove_sc}}{Wether to remove single cell datasets from search?
+Default: \code{TRUE}}
+
+\item{\code{...}}{stuff and things}
+
+\item{\code{scrub_search}}{remove whitespace,dashes,etc. from values in
+samples columns before running the regex? Setting this to \code{TRUE} slows
+down the search appreciable (~ 3x - 4x). Default: \code{FALSE}}
+
+\item{\code{ignore.case}}{Should we ignore case when using \code{regex}?
+Default: \code{TRUE}}
+
+\item{\code{threshold_sc}}{the probability threshold to indicate wheter sample
+is from a singlecell dataset, default: 0.5}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+the samples facile_frame that matches the search
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Archs4Client-clone"></a>}}
