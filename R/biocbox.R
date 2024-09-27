@@ -2,7 +2,7 @@
 #' @export
 biocbox.archs4_client_facile_frame <- function(
     x, class = "list", assay_name = "counts", features = NULL,
-    sample_covariates = NULL, ...) {
+    sample_covariates = NULL, with_h5idx = FALSE, ...) {
   a4c <- assert_class(fds(x), "Archs4Client")
   class <- assert_choice(class, c("list", "DGEList", "SummarizedExperiment"))
   assert_integerish(x$h5idx)
@@ -27,6 +27,9 @@ biocbox.archs4_client_facile_frame <- function(
   }
   if (!"dataset" %in% names(x) && "series_id" %in% names(x)) {
     x <- dplyr::rename(x, dataset = series_id)
+  }
+  if (!with_h5idx) {
+    x$h5idx <- NULL
   }
 
   out <- list(

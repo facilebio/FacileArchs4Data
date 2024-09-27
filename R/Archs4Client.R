@@ -155,7 +155,8 @@ Archs4Client <- R6::R6Class(
   dplyr::transmute(
     out,
     h5idx,
-    feature_id = ensembl_gene_id,
+    # feature_id = ensembl_gene_id, # v2.2
+    feature_id = ensembl_gene, # v2.2
     name = symbol,
     meta = biotype)
 }
