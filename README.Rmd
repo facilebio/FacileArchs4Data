@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 )
 ```
 
-# FacileArchs4DataSet
+# FacileArchs4Data
 
 This package is a work in progress and aims to implement the Facile API over
 the ARCHS4 (v2) datasets. It provides some fundamental code required to build
@@ -23,7 +23,7 @@ the children dataset repositories for the human and mouse [HDF5 files][archs4dl]
 files provided by the ARCHS4 project.
 
 These [ARCHS4 dataset][archs4] repositories can then be loaded into a
-`FacileArchs4DataSet` object, which is a subclass of a `FacileDataSet` and subsequently used by the [facilebio][] ecosystem.
+`FacileArchs4Data` object, which is a subclass of a `FacileDataSet` and subsequently used by the [facilebio][] ecosystem.
 
 This package is currently written against [v2.2][archs4dl] of the human and
 mouse file format.
@@ -48,7 +48,7 @@ details.
 ## Usage
 
 ```{r}
-library(FacileArchs4DataSet)
+library(FacileArchs4Data)
 # NOTE: Set this in your ~/.Rprofile file to make your life easier
 options(archs4.data_dir = "~/workspace/data/archs4/v2.2")
 a4h <- Archs4Client$new("human")
@@ -83,7 +83,7 @@ Now install this package from GitHub.
 
 
 ```r
-remotes::install_github("facilebio/FacileArchs4DataSet")
+remotes::install_github("facilebio/FacileArchs4Data")
 ```
 
 ## Usage
@@ -91,7 +91,7 @@ remotes::install_github("facilebio/FacileArchs4DataSet")
 Find a human dataset of interest and convert it into a `SummarizedExperiment`:
 
 ```{r}
-library(FacileArchs4DataSet)
+library(FacileArchs4Data)
 a4h <- Archs4Client$new("human")
 # Let's get a DGEList of some iPSC microglia data from GSE186301
 y <- a4h$samples |> 
@@ -111,8 +111,8 @@ To build the species-specifc dataset packages, users will need to download the (
 and run the `build` command:
 
 ```{r, eval = FALSE}
-# pak::pkg_install("facilebio/FacileArchs4DataSet")
-FacileArchs4DataSet::build(
+# pak::pkg_install("facilebio/FacileArchs4Data")
+FacileArchs4Data::build(
   h5 = "/path/to/archs4_gene_human_v2.1.2.h5",
   outdir = "/path/to/repository/dir",
   species = "human")
@@ -127,7 +127,7 @@ Once the data packge is successfully built, you can use it for exploratory analy
 ```{r, eval = FALSE}
 library(FacileAnalysis)
 
-a4h <- FacileArchs4DataSet::load("/path/to/repository/dir/human")
+a4h <- FacileArchs4Data::load("/path/to/repository/dir/human")
 a4h |>
   filter_samples(dataset == "GSE89189") |>
   fdgeGadget()

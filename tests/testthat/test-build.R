@@ -1,1 +1,1 @@
-context("Local build of the FacileArchs4DataSet")
+context("Local build of the FacileArchs4Data")

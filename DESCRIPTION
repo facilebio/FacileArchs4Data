@@ -1,4 +1,4 @@
-Package: FacileArchs4DataSet
+Package: FacileArchs4Data
 Type: Package
 Title: Implements the FacileData API over ARCHS4 (v2) data objects.
 Version: 0.1.3
@@ -12,11 +12,11 @@ Description: Implements the FacileData API over the v2 ARHCS4 data files. This
     is an official python package (archs4py) developed by the MayaanLab that
     could be used as a handy reference (see links below)
 URL:
-    https://github.com/facilebio/FacileArchs4DataSet,
+    https://github.com/facilebio/FacileArchs4Data,
     https://maayanlab.cloud/archs4/download.html,
     https://github.com/MaayanLab/archs4py
 BugReports:
-    https://github.com/facilebio/FacileArchs4DataSet/issues
+    https://github.com/facilebio/FacileArchs4Data/issues
 Depends:
     FacileData
 Imports:
@@ -35,4 +35,4 @@ Remotes:
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.2

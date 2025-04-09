@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# FacileArchs4DataSet
+# FacileArchs4Data
 
 This package is a work in progress and aims to implement the Facile API
 over the ARCHS4 (v2) datasets. It provides some fundamental code
@@ -10,7 +10,7 @@ mouse [HDF5 files](https://maayanlab.cloud/archs4/download.html) files
 provided by the ARCHS4 project.
 
 These [ARCHS4 dataset](https://maayanlab.cloud/archs4/index.html)
-repositories can then be loaded into a `FacileArchs4DataSet` object,
+repositories can then be loaded into a `FacileArchs4Data` object,
 which is a subclass of a `FacileDataSet` and subsequently used by the
 [facilebio](https://facile.bio/) ecosystem.
 
@@ -39,7 +39,7 @@ section for more details.
 ## Usage
 
 ``` r
-library(FacileArchs4DataSet)
+library(FacileArchs4Data)
 # NOTE: Set this in your ~/.Rprofile file to make your life easier
 options(archs4.data_dir = "~/workspace/data/archs4/v2.2")
 a4h <- Archs4Client$new("human")
@@ -88,7 +88,7 @@ options(
 Now install this package from GitHub.
 
 ``` r
-remotes::install_github("facilebio/FacileArchs4DataSet")
+remotes::install_github("facilebio/FacileArchs4Data")
 ```
 
 ## Usage
@@ -97,7 +97,7 @@ Find a human dataset of interest and convert it into a
 `SummarizedExperiment`:
 
 ``` r
-library(FacileArchs4DataSet)
+library(FacileArchs4Data)
 a4h <- Archs4Client$new("human")
 #> Warning in FUN(X[[i]], ...): NAs introduced by coercion to integer range
 # Let's get a DGEList of some iPSC microglia data from GSE186301
@@ -128,8 +128,8 @@ project](https://maayanlab.cloud/archs4/download.html) and run the
 `build` command:
 
 ``` r
-# pak::pkg_install("facilebio/FacileArchs4DataSet")
-FacileArchs4DataSet::build(
+# pak::pkg_install("facilebio/FacileArchs4Data")
+FacileArchs4Data::build(
   h5 = "/path/to/archs4_gene_human_v2.1.2.h5",
   outdir = "/path/to/repository/dir",
   species = "human")
@@ -147,7 +147,7 @@ exploratory analysis, the facile way:
 ``` r
 library(FacileAnalysis)
 
-a4h <- FacileArchs4DataSet::load("/path/to/repository/dir/human")
+a4h <- FacileArchs4Data::load("/path/to/repository/dir/human")
 a4h |>
   filter_samples(dataset == "GSE89189") |>
   fdgeGadget()
