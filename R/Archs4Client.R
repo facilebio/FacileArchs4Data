@@ -152,6 +152,11 @@ Archs4Client <- R6::R6Class(
     #' @param threshold_sc_likely the proportion of samples in a study that
     #'   must look like singlecell data in order to classify the study as
     #'   singlecell. default: 0.2
+    #' @param sample_search If a search string is provided, this will trigger
+    #'   a sample search via the `$search()` method. The study table returned
+    #'   will be augmented with a `search_hits` column that tells you how many
+    #'   samples within the study were a hit for your search.
+    #' @param scrub_search,meta_fields,ignore.case parameters passed to `search` function.
     #' @return a tibble with 1 row per geo series (GSE) / study with the
     #'   following columns:
     #'   * `nsamples`: number of samples in the study
@@ -160,16 +165,38 @@ Archs4Client <- R6::R6Class(
     #'   * `sc_likely`: if the number of samples in the study that look like
     #'     they are singlecell exceeds `threshold_sc_likely`, this is set to
     #'     `TRUE`
-    studies = function(threshold_sc = 0.5, threshold_sc_likely = 0.2) {
+    #'   * `search_hits`: The number of samples in the series that were a hit
+    #'     for the `sample_search` query. If no `sample_search` was provided,
+    #'     this is just `0`.
+    studies = function(
+        sample_search = NULL,
+        meta_fields = .default_meta_fields(),
+        scrub_search = FALSE,
+        ignore.case = TRUE,
+        threshold_sc = 0.5,
+        threshold_sc_likely = 0.2
+      ) {
       assert_number(threshold_sc, lower = 0.01, upper = 1)
 
+      hits <- NULL
+      if (checkmate::test_string(sample_search)) {
+        hits <- self$search(sample_search, meta_fields, ignore.case) |>
+          dplyr::summarize(search_hits = dplyr::n(), .by = "series_id")
+      }
       smry <- self$samples |>
         dplyr::summarize(
           nsamples = dplyr::n(),
           nsc = sum(singlecellprobability >= threshold_sc),
           likely_sc = nsc / nsamples >= 0.2,
+          search_hits = 0L,
           .by = "series_id"
         )
+      if (!is.null(hits) && nrow(hits) > 0L) {
+        smry <- smry |>
+          dplyr::select(-search_hits) |>
+          dplyr::left_join(hits, by = "series_id") |>
+          dplyr::mutate(search_hits = ifelse(is.na(search_hits), 0L, search_hits))
+      }
       smry
     }
   ),

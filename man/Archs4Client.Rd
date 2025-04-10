@@ -162,12 +162,26 @@ the samples facile_frame that matches the search
 Return a table of studies (series_id) in here, optionally dropping
 those that look singlecell-like
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$studies(threshold_sc = 0.5, threshold_sc_likely = 0.2)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$studies(
+  sample_search = NULL,
+  meta_fields = .default_meta_fields(),
+  scrub_search = FALSE,
+  ignore.case = TRUE,
+  threshold_sc = 0.5,
+  threshold_sc_likely = 0.2
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{sample_search}}{If a search string is provided, this will trigger
+a sample search via the \verb{$search()} method. The study table returned
+will be augmented with a \code{search_hits} column that tells you how many
+samples within the study were a hit for your search.}
+
+\item{\code{scrub_search, meta_fields, ignore.case}}{parameters passed to \code{search} function.}
+
 \item{\code{threshold_sc}}{the probability threshold to indicate wheter sample
 is from a singlecell dataset, default: 0.5}
 
@@ -187,6 +201,9 @@ following columns:
 \item \code{sc_likely}: if the number of samples in the study that look like
 they are singlecell exceeds \code{threshold_sc_likely}, this is set to
 \code{TRUE}
+\item \code{search_hits}: The number of samples in the series that were a hit
+for the \code{sample_search} query. If no \code{sample_search} was provided,
+this is just \code{0}.
 }
 }
 }
