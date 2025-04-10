@@ -70,8 +70,8 @@ experience when calling the `$new()` constructor for the first time.
 
 ```{r, message=FALSE, warning=FALSE}
 library(FacileArchs4Data)
-library(dplyr)
-
+library(tidyverse)
+theme_set(theme_bw(base_size = 16))
 # NOTE: You can set this in your ~/.Rprofile file to make your life easier
 options(archs4.data_dir = "~/workspace/data/archs4/v2.6")
 a4h <- Archs4Client$new("human")
@@ -169,8 +169,22 @@ viz(ypca, color_aes = "group")
 ydge <- yf |> 
   flm_def(covariate = "group", numer = "Parkinsons", denom = "Control") |> 
   fdge(method = "voom")
-viz(ydge, type = "volcano", ntop = 2000, webgl = FALSE)
 ```
+
+```{r}
+ydge |> 
+  tidy() |> 
+  ggplot(aes(x = logFC, y = -log10(padj))) +
+  geom_point(alpha = 0.8) +
+  xlim(-3, 3)
+```
+
+Or if you're webgl-powered:
+
+```{r}
+viz(ydge, type = "volcano", ntop = 2000)
+```
+
 
 Refer to the [FacileAnalysis][] documentation for more analysis fun.
 

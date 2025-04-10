@@ -51,8 +51,8 @@ first time.
 
 ``` r
 library(FacileArchs4Data)
-library(dplyr)
-
+library(tidyverse)
+theme_set(theme_bw(base_size = 16))
 # NOTE: You can set this in your ~/.Rprofile file to make your life easier
 options(archs4.data_dir = "~/workspace/data/archs4/v2.6")
 a4h <- Archs4Client$new("human")
@@ -181,10 +181,25 @@ ydge <- yf |>
   fdge(method = "voom")
 #> Warning in .filter_count_assay(x, des.matrix, filter.cols, filter_universe, :
 #> Only 12.07% (8108) of features are retained after filtering.
-viz(ydge, type = "volcano", ntop = 2000, webgl = FALSE)
 ```
 
-![](man/figures/unnamed-chunk-10-1.png)<!-- -->
+``` r
+ydge |> 
+  tidy() |> 
+  ggplot(aes(x = logFC, y = -log10(padj))) +
+  geom_point(alpha = 0.8) +
+  xlim(-3, 3)
+```
+
+![](man/figures/unnamed-chunk-11-1.png)<!-- -->
+
+Or if you’re webgl-powered:
+
+``` r
+viz(ydge, type = "volcano", ntop = 2000)
+```
+
+![](man/figures/unnamed-chunk-12-1.png)<!-- -->
 
 Refer to the
 [FacileAnalysis](https://facilebio.github.io/FacileAnalysis/)
