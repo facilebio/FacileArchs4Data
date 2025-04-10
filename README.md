@@ -4,21 +4,29 @@
 # FacileArchs4Data
 
 This package is a work in progress and aims to implement the Facile API
-over the ARCHS4 (v2) datasets. It provides some fundamental code
-required to build the children dataset repositories for the human and
-mouse [HDF5 files](https://maayanlab.cloud/archs4/download.html) files
-provided by the ARCHS4 project.
+over the \[ARCHS4\]\[\] (v2) datasets.
 
-These [ARCHS4 dataset](https://maayanlab.cloud/archs4/index.html)
-repositories can then be loaded into a `FacileArchs4Data` object,
-which is a subclass of a `FacileDataSet` and subsequently used by the
-[facilebio](https://facile.bio/) ecosystem.
+Currently the package doesn’t provide much functionality except for easy
+wrappers to construct bioconductor expression containers (DGEList,
+SummarizedExperiment, etc.) out of whatever subset of samples and genes
+that you like.
 
-This package is currently written against
-[v2.2](https://maayanlab.cloud/archs4/download.html) of the human and
-mouse file format.
+## Installation
 
-## State of Affairs
+You’ll need to download the archs4 hdf5 files yourself form their
+[download page](https://archs4.org/download). I put them in versioned
+directories somewhere on my system, like:
+
+    ~/workspace/data/archs4/v2.6/human_gene_v2.6.h5
+    ~/workspace/data/archs4/v2.6/mouse_gene_v2.6.h5
+
+Then install this package from github:
+
+``` r
+pak::pak("facilebio/FacileArchs4Data")
+```
+
+## Usage
 
 Currently you should use the `a4 <- Archs4Client$new("mouse")` (or
 `"human"`) R6 constructor to get a thin wrapper around the data object.
@@ -36,143 +44,161 @@ You can put new/old h5 files in different directories, then load the
 dataset by specifying simply the species. See the **Installation**
 section for more details.
 
-## Usage
+Note that when you load the hdf5 file, a subset of columns will be
+loaded for all of the samples by default. This is the (likely few second
+delay) you experience when calling the `$new()` constructor for the
+first time.
 
 ``` r
 library(FacileArchs4Data)
-# NOTE: Set this in your ~/.Rprofile file to make your life easier
-options(archs4.data_dir = "~/workspace/data/archs4/v2.2")
+library(dplyr)
+
+# NOTE: You can set this in your ~/.Rprofile file to make your life easier
+options(archs4.data_dir = "~/workspace/data/archs4/v2.6")
 a4h <- Archs4Client$new("human")
-#> Warning in FUN(X[[i]], ...): NAs introduced by coercion to integer range
-a4h$samples |> head()
+```
+
+## Finding samples / expreiments of interest
+
+Some of the funtions in this package are fashioned after the archs4py
+package, so there is a `$search()` function made available to you that
+enables you to search the metadata of each sample based on some of the
+decault columns.
+
+Let’s say you were interested in searching for “parksinsons” related
+samples:
+
+``` r
+samples.park <- a4h$search("parkinson")
+```
+
+This will return a tibble of samples where the word `"parkinson"`
+appears in one of hte meta data fields:
+
+``` r
+head(samples.park)
 #> # A tibble: 6 × 16
-#>   h5idx series_id geo_accession sample     source_name_ch1      title           
-#>   <int> <chr>     <chr>         <chr>      <chr>                <chr>           
-#> 1     1 GSE29282  GSM1000981    GSM1000981 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> 2     2 GSE29282  GSM1000982    GSM1000982 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> 3     3 GSE29282  GSM1000983    GSM1000983 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> 4     4 GSE29282  GSM1000984    GSM1000984 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> 5     5 GSE29282  GSM1000985    GSM1000985 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> 6     6 GSE29282  GSM1000986    GSM1000986 Human DLBCL cel line OCI-LY1_48hrs_m…
-#> # ℹ 10 more variables: singlecellprobability <dbl>, readsaligned <int>,
+#>   h5idx series_id geo_accession sample     source_name_ch1                 title
+#>   <int> <chr>     <chr>         <chr>      <chr>                           <chr>
+#> 1 11365 GSE62642  GSM1530726    GSM1530726 iPS cell-derived neuronal samp… Spor…
+#> 2 11366 GSE62642  GSM1530727    GSM1530727 iPS cell-derived neuronal samp… Spor…
+#> 3 11371 GSE62642  GSM1530732    GSM1530732 iPS cell-derived neuronal samp… PD-1…
+#> 4 11372 GSE62642  GSM1530733    GSM1530733 iPS cell-derived neuronal samp… PD-1…
+#> 5 11373 GSE62642  GSM1530734    GSM1530734 iPS cell-derived neuronal samp… PD-2…
+#> 6 11374 GSE62642  GSM1530735    GSM1530735 iPS cell-derived neuronal samp… PD-2…
+#> # ℹ 10 more variables: singlecellprobability <dbl>, alignedreads <dbl>,
 #> #   molecule_ch1 <chr>, library_source <chr>, library_selection <chr>,
 #> #   platform_id <chr>, instrument_model <chr>, data_processing <chr>,
 #> #   extract_protocol_ch1 <chr>, characteristics_ch1 <chr>
 ```
 
-## Installation
+The sample metadata tibble is also easily available in the `$samples`
+tibble, and you can search for rows of interest “as you are used to”.
 
-Create a directory (`$ARCHS4_DATADIR`) on your local filesystem and
-download the mouse and human gene expression count matrices from the
-[ARCHS4 Download page](https://maayanlab.cloud/archs4/download.html).
-Let’s assume `ARCHS4_DATA_DIR='~/data/archs4/v2.2'`
+## Expression Analysis
 
-This directory should look like:
+Let’s say you already knew you were interested in using the `"GSE40710"`
+dataset (aSyn polyA-RNAseq in PD and unaffected cortical brain samples)
+to explore the gene expression differencs between healthy and
+parkinson’s brain transcriptomes.
 
-``` bash
-$ ls -l $ARCHS4_DATA_DIR # ls -l ~/data/archs4/v2.2
--rw-r--r--@ 1 steve  staff    35G Jan 22 14:25 human_gene_v2.2.h5
--rw-r--r--@ 1 steve  staff    28G Feb  5 16:13 mouse_gene_v2.2.h5
-```
-
-In your ~/.Rprofile, set the `archs4.data_dir` option to
-`$ARCHS4_DATADIR`:
-
-``` bash
-$ cat ~/.Rprofile
-options(
-  repos = c(cloud = "https://cloud.r-project.org"),
-  archs4.data_dir = "~/data/archs4/v2.2")
-```
-
-Now install this package from GitHub.
+We can easily extract the samples in this dataset like so:
 
 ``` r
-remotes::install_github("facilebio/FacileArchs4Data")
+samples <- filter(a4h$samples, series_id == "GSE40710")
 ```
 
-## Usage
+Your next challenge will be to identify which samples belong to healthy
+vs affected individuals. The data in archs4 matches what is provided in
+the GEO database, and there are unfortunately no standards as far as
+data/sample annotations go, so each individual experiment will provide
+you with its own set of challenges.
 
-Find a human dataset of interest and convert it into a
-`SummarizedExperiment`:
+Often, the sample-level metadata you will be most interested will be in
+the `"source_name_ch1"` and `"title"` columns:
 
 ``` r
-library(FacileArchs4Data)
-a4h <- Archs4Client$new("human")
-#> Warning in FUN(X[[i]], ...): NAs introduced by coercion to integer range
-# Let's get a DGEList of some iPSC microglia data from GSE186301
-y <- a4h$samples |> 
-  dplyr::filter(series_id == "GSE186301") |> 
+set.seed(0xBEEF)
+samples |> 
+  sample_n(6) |> 
+  select(sample, title, source_name_ch1)
+#> # A tibble: 6 × 3
+#>   sample    title                     source_name_ch1
+#>   <chr>     <chr>                     <chr>          
+#> 1 GSM999587 Parkinson's Disease PD 13 Brain cortex   
+#> 2 GSM999584 Parkinson's Disease PD 10 Brain cortex   
+#> 3 GSM999560 Control Und. 2            Brain cortex   
+#> 4 GSM999589 Parkinson's Disease PD 15 Brain cortex   
+#> 5 GSM999583 Parkinson's Disease PD 9  Brain cortex   
+#> 6 GSM999572 Control Und. 14           Brain cortex
+```
+
+We can see that the parkinson’s vs control status is in the `"title"`
+column. Let’s great a “group” column with the affected status, and then
+use the `biocbox` function in this package to retrieve the associated
+expression data for these samples and turn all of it into a DGEList for
+downstream analysis.
+
+``` r
+y <- samples |> 
+  mutate(
+    # extract control/parksinson & remove the title column
+    group = sub(" .*", "", title),
+    # the "'" to make `group` a well behaved R variable
+    group = sub("'", "", group)
+  ) |> 
   biocbox(class = "DGEList")
-y$samples |> 
-  dplyr::select(dataset, sample_id, source_name_ch1) |> 
-  dplyr::sample_n(5)
-#>              dataset  sample_id source_name_ch1
-#> GSM5643402 GSE186301 GSM5643402  iPSC-microglia
-#> GSM5643403 GSE186301 GSM5643403  iPSC-microglia
-#> GSM5643405 GSE186301 GSM5643405  iPSC-microglia
-#> GSM5643407 GSE186301 GSM5643407  iPSC-microglia
-#> GSM5643404 GSE186301 GSM5643404  iPSC-microglia
 ```
 
-NOTE: The rest of these instructions was from v1 of this software. There
-were some good ideas there, so leaving it for reference but they don’t
-work.
+Now you are ready to analyze `y` using your favorite edgeR/limma
+workflow.
 
-## Installation
+## FacileData Integration
 
-To build the species-specifc dataset packages, users will need to
-download the (v2) gene level HDF5 files for the species of interest
-(mouse or human) from the [ARCHS4
-project](https://maayanlab.cloud/archs4/download.html) and run the
-`build` command:
+If you have the FacileBiocData and FacileAnalysisShine package
+installed, you can then use `y` for interactive analysis.
 
 ``` r
-# pak::pkg_install("facilebio/FacileArchs4Data")
-FacileArchs4Data::build(
-  h5 = "/path/to/archs4_gene_human_v2.1.2.h5",
-  outdir = "/path/to/repository/dir",
-  species = "human")
+library(FacileBiocData)
+library(FacileAnalysisShine)
+yf <- facilitate(y)
 ```
 
-This will create a `/path/to/repository/dir/human` directory that can be
-used to instantiate a `FacileArcsh4DataSet` that can be used in the
-facilebio ecosystem.
-
-## Data Exploration
-
-Once the data packge is successfully built, you can use it for
-exploratory analysis, the facile way:
+### Principal Components Analysis
 
 ``` r
-library(FacileAnalysis)
-
-a4h <- FacileArchs4Data::load("/path/to/repository/dir/human")
-a4h |>
-  filter_samples(dataset == "GSE89189") |>
-  fdgeGadget()
+ypca <- fpca(yf)
+viz(ypca, color_aes = "group")
 ```
+
+![](man/figures/unnamed-chunk-9-1.png)<!-- -->
+
+### Differential Expressoin Analysis
+
+``` r
+ydge <- yf |> 
+  flm_def(covariate = "group", numer = "Parkinsons", denom = "Control") |> 
+  fdge(method = "voom")
+#> Warning in .filter_count_assay(x, des.matrix, filter.cols, filter_universe, :
+#> Only 12.07% (8108) of features are retained after filtering.
+viz(ydge, type = "volcano", ntop = 2000)
+```
+
+![](man/figures/unnamed-chunk-10-1.png)<!-- -->
 
 Refer to the
 [FacileAnalysis](https://facilebio.github.io/FacileAnalysis/)
-documentation for details on how to easily perform diferential
-expression analysis, GSEA, etc.
+documentation for more analysis fun.
 
 ## License
 
-In order for this package to be useful, the end user must download the
-HDF5 files provifed by the [ARCHS4
-project](https://maayanlab.cloud/archs4/download.html). Use of the
-ARCHS4 data is subject to its own [terms of
-use](https://maayanlab.cloud/archs4/help.html), and it is the end-user’s
-responsibility to ensure that they are using it in a compliant manner.
+Please note that the use of archs4 data is subject to its own agreement
+/ licensing restrictions. Be sure to follow those.
 
-The code in this package that facilitates the query and retrieval of the
-data provided is released under [The Apache 2
+The code in this package is released under the [Apache 2
 License](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## Acknowledgements
 
-Thanks toAlexander Lachmann and The Ma’ayan Laboratory for the
-development andcontinued updates to the [ARCHS4
-project](https://maayanlab.cloud/archs4/index.html).
+Thanks to Alexander Lachmann and The Ma’ayan Laboratory for the
+development and continued updates to the \[ARCHS4 project\]\[archs4\].

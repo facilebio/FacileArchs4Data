@@ -96,11 +96,14 @@ Archs4Client <- R6::R6Class(
     #'   down the search appreciable (~ 3x - 4x). Default: `FALSE`
     #' @param ignore.case Should we ignore case when using `regex`?
     #'   Default: `TRUE`
+    #' @param remove_sc Boolean indicating whether or not to remove samples
+    #'   flagged to likely be single-cell data. Default is `TRUE`.
     #' @param threshold_sc the probability threshold to indicate wheter sample
     #'   is from a singlecell dataset, default: 0.5
     #' @return the samples facile_frame that matches the search
-    search = function(regex, meta_fields = NULL, remove_sc = TRUE, ...,
+    search = function(regex, meta_fields = NULL,
                       scrub_search = FALSE, ignore.case = TRUE,
+                      remove_sc = TRUE,
                       threshold_sc = 0.5) {
       assert_string(regex)
       if (is.null(meta_fields)) {
@@ -170,7 +173,7 @@ Archs4Client <- R6::R6Class(
       "source_name_ch1",
       "title",
       "singlecellprobability",
-      "readsaligned",
+      "alignedreads",
       "molecule_ch1", # cyotplasmic RNA, nuclear RNA, polyA RNA, etc.
       "library_source",    # transcriptomic, transcriptomic singlecell (not reliable)
       "library_selection", # CAGE, cDNA (vast majority), RACE, other

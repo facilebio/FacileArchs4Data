@@ -113,10 +113,9 @@ This function is fashioned after the archs4py.meta() function.
 \if{html}{\out{<div class="r">}}\preformatted{Archs4Client$search(
   regex,
   meta_fields = NULL,
-  remove_sc = TRUE,
-  ...,
   scrub_search = FALSE,
   ignore.case = TRUE,
+  remove_sc = TRUE,
   threshold_sc = 0.5
 )}\if{html}{\out{</div>}}
 }
@@ -129,11 +128,6 @@ This function is fashioned after the archs4py.meta() function.
 \item{\code{meta_fields}}{which columns in the dataset to search against, defaults
 to a set of columns defined in the archs4py package}
 
-\item{\code{remove_sc}}{Wether to remove single cell datasets from search?
-Default: \code{TRUE}}
-
-\item{\code{...}}{stuff and things}
-
 \item{\code{scrub_search}}{remove whitespace,dashes,etc. from values in
 samples columns before running the regex? Setting this to \code{TRUE} slows
 down the search appreciable (~ 3x - 4x). Default: \code{FALSE}}
@@ -141,8 +135,16 @@ down the search appreciable (~ 3x - 4x). Default: \code{FALSE}}
 \item{\code{ignore.case}}{Should we ignore case when using \code{regex}?
 Default: \code{TRUE}}
 
+\item{\code{remove_sc}}{Wether to remove single cell datasets from search?
+Default: \code{TRUE}}
+
+\item{\code{remove_sc}}{Boolean indicating whether or not to remove samples
+flagged to likely be single-cell data. Default is \code{TRUE}.}
+
 \item{\code{threshold_sc}}{the probability threshold to indicate wheter sample
 is from a singlecell dataset, default: 0.5}
+
+\item{\code{...}}{stuff and things}
 }
 \if{html}{\out{</div>}}
 }
