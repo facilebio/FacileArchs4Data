@@ -42,6 +42,8 @@ https://github.com/MaayanLab/archs4py/blob/main/archs4py/data.py#L27
 \item{\code{features}}{the tibble of features (genes) in this dataset.}
 
 \item{\code{species}}{is this thing mouse or human?}
+
+\item{\code{remove_sc}}{default value for the \code{remove_sc} parameters}
 }
 \if{html}{\out{</div>}}
 }
@@ -50,6 +52,7 @@ https://github.com/MaayanLab/archs4py/blob/main/archs4py/data.py#L27
 \itemize{
 \item \href{#method-Archs4Client-new}{\code{Archs4Client$new()}}
 \item \href{#method-Archs4Client-search}{\code{Archs4Client$search()}}
+\item \href{#method-Archs4Client-studies}{\code{Archs4Client$studies()}}
 \item \href{#method-Archs4Client-clone}{\code{Archs4Client$clone()}}
 }
 }
@@ -64,6 +67,7 @@ Create a new Archs4Client object
   ...,
   path = NULL,
   directory = getOption("archs4.data_dir", NULL),
+  remove_sc = TRUE,
   sample_columns = NULL
 )}\if{html}{\out{</div>}}
 }
@@ -80,6 +84,8 @@ Create a new Archs4Client object
 \item{\code{directory}}{the parent directory that stores the species-specific
 expression datasets. Defaults to \code{getOption("archs4.data_dir")}. To make
 your life easier, you can set this option in your \verb{~/.Rprofile}}
+
+\item{\code{remove_sc}}{default value for the \code{remove_sc} parameters}
 
 \item{\code{sample_columns}}{wut?}
 }
@@ -115,7 +121,7 @@ This function is fashioned after the archs4py.meta() function.
   meta_fields = NULL,
   scrub_search = FALSE,
   ignore.case = TRUE,
-  remove_sc = TRUE,
+  remove_sc = self$remove_sc,
   threshold_sc = 0.5
 )}\if{html}{\out{</div>}}
 }
@@ -135,11 +141,8 @@ down the search appreciable (~ 3x - 4x). Default: \code{FALSE}}
 \item{\code{ignore.case}}{Should we ignore case when using \code{regex}?
 Default: \code{TRUE}}
 
-\item{\code{remove_sc}}{Wether to remove single cell datasets from search?
+\item{\code{remove_sc}}{Wether to remove single cell samples from search?
 Default: \code{TRUE}}
-
-\item{\code{remove_sc}}{Boolean indicating whether or not to remove samples
-flagged to likely be single-cell data. Default is \code{TRUE}.}
 
 \item{\code{threshold_sc}}{the probability threshold to indicate wheter sample
 is from a singlecell dataset, default: 0.5}
@@ -150,6 +153,41 @@ is from a singlecell dataset, default: 0.5}
 }
 \subsection{Returns}{
 the samples facile_frame that matches the search
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Archs4Client-studies"></a>}}
+\if{latex}{\out{\hypertarget{method-Archs4Client-studies}{}}}
+\subsection{Method \code{studies()}}{
+Return a table of studies (series_id) in here, optionally dropping
+those that look singlecell-like
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Archs4Client$studies(threshold_sc = 0.5, threshold_sc_likely = 0.2)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{threshold_sc}}{the probability threshold to indicate wheter sample
+is from a singlecell dataset, default: 0.5}
+
+\item{\code{threshold_sc_likely}}{the proportion of samples in a study that
+must look like singlecell data in order to classify the study as
+singlecell. default: 0.2}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+a tibble with 1 row per geo series (GSE) / study with the
+following columns:
+\itemize{
+\item \code{nsamples}: number of samples in the study
+\item \code{nsc}: number of samples that look like single cell, given the
+\code{threshold_sc} parameter
+\item \code{sc_likely}: if the number of samples in the study that look like
+they are singlecell exceeds \code{threshold_sc_likely}, this is set to
+\code{TRUE}
+}
 }
 }
 \if{html}{\out{<hr>}}

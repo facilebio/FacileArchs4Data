@@ -25,6 +25,9 @@ Archs4Client <- R6::R6Class(
     #' @field species is this thing mouse or human?
     species = NULL,
 
+    #' @field remove_sc default value for the `remove_sc` parameters
+    remove_sc = NULL,
+
     #' @description
     #' Create a new Archs4Client object
     #' @param species `"mouse"` or `"human"`
@@ -34,6 +37,7 @@ Archs4Client <- R6::R6Class(
     #'   expression datasets. Defaults to `getOption("archs4.data_dir")`. To make
     #'   your life easier, you can set this option in your `~/.Rprofile`
     #' @param sample_columns wut?
+    #' @param remove_sc default value for the `remove_sc` parameters
     #' @return a new Archs4Client
     #' @examples
     #' \dontrun{
@@ -43,7 +47,9 @@ Archs4Client <- R6::R6Class(
     #' }
     initialize = function(species, ..., path = NULL,
                           directory = getOption("archs4.data_dir", NULL),
+                          remove_sc = TRUE,
                           sample_columns = NULL) {
+      self$remove_sc <- assert_flag(remove_sc)
       if (is.null(path)) {
         assert_directory_exists(directory, "r")
         assert_string(species)
@@ -88,7 +94,7 @@ Archs4Client <- R6::R6Class(
     #' @param regex the regular expression to use for search
     #' @param meta_fields which columns in the dataset to search against, defaults
     #'   to a set of columns defined in the archs4py package
-    #' @param remove_sc Wether to remove single cell datasets from search?
+    #' @param remove_sc Wether to remove single cell samples from search?
     #'   Default: `TRUE`
     #' @param ... stuff and things
     #' @param scrub_search remove whitespace,dashes,etc. from values in
@@ -96,16 +102,15 @@ Archs4Client <- R6::R6Class(
     #'   down the search appreciable (~ 3x - 4x). Default: `FALSE`
     #' @param ignore.case Should we ignore case when using `regex`?
     #'   Default: `TRUE`
-    #' @param remove_sc Boolean indicating whether or not to remove samples
-    #'   flagged to likely be single-cell data. Default is `TRUE`.
     #' @param threshold_sc the probability threshold to indicate wheter sample
     #'   is from a singlecell dataset, default: 0.5
     #' @return the samples facile_frame that matches the search
     search = function(regex, meta_fields = NULL,
                       scrub_search = FALSE, ignore.case = TRUE,
-                      remove_sc = TRUE,
+                      remove_sc = self$remove_sc,
                       threshold_sc = 0.5) {
       assert_string(regex)
+      assert_flag(remove_sc)
       if (is.null(meta_fields)) {
         meta_fields <- .default_meta_fields()
       }
@@ -136,8 +141,37 @@ Archs4Client <- R6::R6Class(
         hits <- hits | grepl(regex, text, ignore.case = TRUE)
       }
       samples[hits,,drop=FALSE]
-    }
+    },
 
+    #' @description
+    #' Return a table of studies (series_id) in here, optionally dropping
+    #' those that look singlecell-like
+    #'
+    #' @param threshold_sc the probability threshold to indicate wheter sample
+    #'   is from a singlecell dataset, default: 0.5
+    #' @param threshold_sc_likely the proportion of samples in a study that
+    #'   must look like singlecell data in order to classify the study as
+    #'   singlecell. default: 0.2
+    #' @return a tibble with 1 row per geo series (GSE) / study with the
+    #'   following columns:
+    #'   * `nsamples`: number of samples in the study
+    #'   * `nsc`: number of samples that look like single cell, given the
+    #'     `threshold_sc` parameter
+    #'   * `sc_likely`: if the number of samples in the study that look like
+    #'     they are singlecell exceeds `threshold_sc_likely`, this is set to
+    #'     `TRUE`
+    studies = function(threshold_sc = 0.5, threshold_sc_likely = 0.2) {
+      assert_number(threshold_sc, lower = 0.01, upper = 1)
+
+      smry <- self$samples |>
+        dplyr::summarize(
+          nsamples = dplyr::n(),
+          nsc = sum(singlecellprobability >= threshold_sc),
+          likely_sc = nsc / nsamples >= 0.2,
+          .by = "series_id"
+        )
+      smry
+    }
   ),
   private = list(
     load_samples = function(path) {}
