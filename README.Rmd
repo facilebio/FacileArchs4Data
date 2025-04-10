@@ -169,7 +169,7 @@ viz(ypca, color_aes = "group")
 ydge <- yf |> 
   flm_def(covariate = "group", numer = "Parkinsons", denom = "Control") |> 
   fdge(method = "voom")
-viz(ydge, type = "volcano", ntop = 2000)
+viz(ydge, type = "volcano", ntop = 2000, webgl = FALSE)
 ```
 
 Refer to the [FacileAnalysis][] documentation for more analysis fun.

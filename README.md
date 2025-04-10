@@ -181,7 +181,7 @@ ydge <- yf |>
   fdge(method = "voom")
 #> Warning in .filter_count_assay(x, des.matrix, filter.cols, filter_universe, :
 #> Only 12.07% (8108) of features are retained after filtering.
-viz(ydge, type = "volcano", ntop = 2000)
+viz(ydge, type = "volcano", ntop = 2000, webgl = FALSE)
 ```
 
 ![](man/figures/unnamed-chunk-10-1.png)<!-- -->
