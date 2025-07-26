@@ -20,9 +20,11 @@ BugReports:
 Depends:
     FacileData
 Imports:
+    arrow,
     checkmate,
     dplyr,
     rhdf5,
+    tictoc,
     tidyr,
     yaml
 Suggests:

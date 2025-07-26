@@ -18,13 +18,21 @@ biocbox.archs4_client_facile_frame <- function(
     index = list(x$h5idx, features$h5idx)) |>
     t()
   rownames(counts) <- features$feature_id
-  colnames(counts) <- x$sample
+
+  if (!any(c("sample_id", "sample") %in% colnames(x))) {
+    warning(
+      "neither `sample_id` or `sample` column found in sample frame, ",
+      "creating pseudo id's")
+    x$sample_id <- sprintf("sample_%d", seq_len(ncol(counts)))
+  }
+  if ("sample_id" %in% colnames(x)) {
+    colnames(counts) <- x$sample_id
+  } else {
+    colnames(counts) <- x$sample
+  }
 
   # Let's work with the sample frame we have, not the one we think we have, ie.
   # we may have manipulated / cleaned this up before passing it in here.
-  if (!"sample_id" %in% names(x) && "sample" %in% names(x)) {
-    x <- dplyr::rename(x, sample_id = sample)
-  }
   if (!"dataset" %in% names(x) && "series_id" %in% names(x)) {
     x <- dplyr::rename(x, dataset = series_id)
   }
