@@ -58,7 +58,7 @@ FacileArchs4DataSet <- function(
     threshold_sc = assert_number(threshold_sc, lower = 0, upper = 1)
   )
 
-  out$nstudies <- length(unique(out$samples$series_id))
+  out$nstudies <- length(unique(out$samples$dataset))
   out$sample_source <- attr(out$samples, "source")
 
   class(out) <- c("FacileArchs4DataSet", "FacileDataStore", class(out))
@@ -77,7 +77,7 @@ print.FacileArchs4DataSet <- function(x, ...) {
 format.FacileArchs4DataSet <- function(x, ...) {
   out <- paste(
     "=======================================================================\n",
-    sprintf("FacileArchs4DataSet: %s\n", x$species),
+    name(x), "\n",
     "-----------------------------------------------------------------------\n",
     sprintf("  path: %s\n", x$h5),
     sprintf("  studies: %s\n", prettyNum(x$nstudies, big.mark = ",")),
