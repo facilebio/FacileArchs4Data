@@ -1,0 +1,70 @@
+---
+title: "archs4-slicing-and-dicing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{archs4-slicing-and-dicing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(tidyverse)
+library(FacileData)
+devtools::load_all(".")
+```
+
+## Overview
+
+Examples of using facile interface to the archs4 dataset(s).
+
+## Usage
+
+```{r}
+(m4 <- FacileArchs4DataSet("mouse"))
+```
+```{r}
+expt <- samples(m4, drop_covariates = FALSE) |> 
+  filter(grepl("GSE249764", dataset))
+```
+
+Curate metadata
+
+```{r}
+info.cols <- c("tissue", "sex", "age", "genotype")
+sinfo <- expt |> 
+  transmute(dataset, sample_id, h5idx, info = characteristics_ch1) |> 
+  tidyr::separate_wider_delim(
+    info,
+    delim = ",",
+    names = info.cols
+  ) |> 
+  mutate(across(all_of(info.cols), ~ trimws(sub(".*?:", "", .x)))) |> 
+  mutate(
+    geno = genotype,
+    genotype = sub("Sipa1l2-/-", "Sipa1l2_KO", genotype, fixed = TRUE),
+    genotype = sub("-PMP22", "", genotype, fixed = TRUE),
+    genotype = sub(" ", "__", genotype),
+    genotype = factor(genotype, c("WT", "Sipa1l2_KO", "C3", "C3__Sipa1l2_KO")),
+    sex = ifelse(sex == "F", "female", "male")
+  )
+
+sample.info <- expt |> 
+  transmute(
+    dataset,
+    sample_id
+  ) |> 
+  left_join(sinfo, by = c("dataset", "sample_id"))
+```
+
+```{r}
+y <- biocbox(sample.info, class = "DGEList")
+```
+
+

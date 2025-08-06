@@ -2,13 +2,95 @@
 
 #' @noRd
 #' @export
+biocbox.archs4_facile_frame <- function(
+    x, class = "list", assay_name = "counts", features = NULL,
+    sample_covariates = NULL, with_h5idx = FALSE, ...) {
+  assert_class(x, "archs4_facile_frame")
+  assert_integerish(x$h5idx)
+  afds <- assert_class(FacileData::fds(x), "FacileArchs4DataSet")
+  class <- assert_choice(class, c("list", "DGEList", "SummarizedExperiment"))
+
+  if (is.null(features)) {
+    features <- features(afds)
+  }
+  assert_tibble(features)
+  assert_subset(c("h5idx", "feature_id", "name", "meta"),  names(features))
+  assert_integerish(features$h5idx)
+  assert_character(features$feature_id)
+  stopifnot("duplicated features" = !any(duplicated(features$feature_id)))
+
+  counts <- rhdf5::h5read(
+    m4$h5,
+    "data/expression",
+    index = list(x$h5idx, features$h5idx)) |>
+    t()
+  rownames(counts) <- features$feature_id
+
+  genes <- as.data.frame(features) |>
+    dplyr::mutate(feature_type = "esngid", source = "ensembl_v107")
+  rownames(genes) <- rownames(counts)
+
+  if (!any(c("sample_id", "sample") %in% colnames(x))) {
+    warning(
+      "neither `sample_id` or `sample` column found in sample frame, ",
+      "creating pseudo id's")
+    x$sample_id <- sprintf("sample_%d", seq_len(ncol(counts)))
+  }
+  if ("sample_id" %in% colnames(x)) {
+    colnames(counts) <- x$sample_id
+  } else {
+    colnames(counts) <- x$sample
+  }
+
+  # Let's work with the sample frame we have, not the one we think we have, ie.
+  # we may have manipulated / cleaned this up before passing it in here.
+  if (!"dataset" %in% names(x) && "series_id" %in% names(x)) {
+    x <- dplyr::rename(x, dataset = series_id)
+  }
+  if (!with_h5idx) {
+    x$h5idx <- NULL
+  }
+
+  samples <- as.data.frame(x)
+  rownames(samples) <- colnames(counts)
+
+  out <- list(counts = counts, features = genes, samples = samples)
+
+  if (class == "DGEList") {
+    reqpkg("edgeR")
+    out <- edgeR::DGEList(
+      counts = out$counts,
+      genes = out$features,
+      samples = out$samples) |>
+      edgeR::calcNormFactors()
+  } else if (class == "SummarizedExperiment") {
+    reqpkg("SummarizedExperiment")
+    out <- SummarizedExperiment::SummarizedExperiment(
+      assays = list(counts = out$counts),
+      rowData = out$features,
+      colData = out$samples)
+  }
+
+  out
+}
+
+#' @noRd
+#' @export
 samples.FacileArchs4DataSet <- function(x, ..., drop_covariates = TRUE) {
   assert_class(x, "FacileArchs4DataSet")
+  assert_flag(drop_covariates)
   out <- x$samples
   if (drop_covariates) {
     out <- dplyr::select(out, dataset, sample_id)
   }
   out
+}
+
+#' @noRd
+#' @export
+features.FacileArchs4DataSet <- function(x, ...) {
+  assert_class(x, "FacileArchs4DataSet")
+  x$features
 }
 
 #' @noRd
