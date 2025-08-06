@@ -52,8 +52,10 @@ Archs4Client <- R6::R6Class(
       self$remove_sc <- assert_flag(remove_sc)
       if (is.null(path)) {
         assert_directory_exists(directory, "r")
-        assert_string(species)
-        path <- dir(directory, species, full.names = TRUE)
+        species <- match.arg(species, c("human", "mouse"))
+        fn.regex <- sprintf(".*%s.*\\.(h5|hdf5)$", species)
+        path <- dir(directory, fn.regex, full.names = TRUE)
+        assert_character(path, len = 1)
       }
       assert_string(path)
       path <- normalizePath(assert_file_exists(path, "r", extension = "h5"))

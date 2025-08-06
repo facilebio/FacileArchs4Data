@@ -53,6 +53,7 @@
   }
   tictoc::tic("sample load")
   out <- NULL
+  source <- "h5"
   if (use_cache) {
     cfn <- archs4_cache_fn(path)$samples
     if (!file.exists(cfn)) {
@@ -69,7 +70,9 @@
           paste(bad.cols, collapse = ",")
         )
       }
+      columns <- unique(c("h5idx", columns))
       out <- dplyr::select(out, dplyr::any_of(columns))
+      source <- cfn
     }
   }
 
@@ -78,6 +81,7 @@
   }
   tictoc::toc(quiet = !verbose)
   class(out) <- c("archs4_client_facile_frame", class(out))
+  attr(out, "source") <- source
   out
 }
 

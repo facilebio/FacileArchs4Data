@@ -50,11 +50,24 @@ FacileArchs4DataSet <- function(
     threshold_sc = assert_number(threshold_sc, lower = 0, upper = 1)
   )
   out$nstudies <- length(unique(out$samples$series_id))
+  out$sample_source <- attr(out$samples, "source")
 
   class(out) <- c(
     "FacileArchs4DataSet",
     "FacileDataStore",
     class(out)
+  )
+
+  out$samples <- out$samples |>
+    dplyr::rename(
+      dataset = "series_id",
+      sample_id = "sample"
+    ) |>
+    FacileData::set_fds(out)
+  class(out$samples) <- c(
+    "archs4_facile_frame",
+    "facile_frame",
+    class(out$samples)
   )
   out
 }
@@ -76,6 +89,8 @@ format.FacileArchs4DataSet <- function(x, ...) {
     sprintf("  studies: %s\n", prettyNum(x$nstudies, big.mark = ",")),
     sprintf("  samples: %s\n", prettyNum(nrow(x$samples), big.mark = ",")),
     sprintf("  genes: %s\n", prettyNum(nrow(x$features), big.mark = ",")),
+    "  .....................................................................\n",
+    sprintf("  sample source: %s\n", x$sample_source),
     "=======================================================================\n",
     sep = ""
   )
