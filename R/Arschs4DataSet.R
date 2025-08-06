@@ -41,34 +41,28 @@ FacileArchs4DataSet <- function(
     }
   }
 
+  samples.all <- .load_archs4_samples(x, use_cache = TRUE) |>
+    dplyr::rename(dataset = "series_id", sample_id = "sample")
+  class(samples.all) <- c(
+    "archs4_facile_frame",
+    "facile_frame",
+    class(samples.all)
+  )
+
   out <- list(
     h5 = x,
-    samples = .load_archs4_samples(x, use_cache = TRUE),
+    samples = samples.all,
     features = .load_archs4_features(x, species),
     species = species,
     remove_sc = assert_flag(remove_sc),
     threshold_sc = assert_number(threshold_sc, lower = 0, upper = 1)
   )
+
   out$nstudies <- length(unique(out$samples$series_id))
   out$sample_source <- attr(out$samples, "source")
 
-  class(out) <- c(
-    "FacileArchs4DataSet",
-    "FacileDataStore",
-    class(out)
-  )
-
-  out$samples <- out$samples |>
-    dplyr::rename(
-      dataset = "series_id",
-      sample_id = "sample"
-    ) |>
-    FacileData::set_fds(out)
-  class(out$samples) <- c(
-    "archs4_facile_frame",
-    "facile_frame",
-    class(out$samples)
-  )
+  class(out) <- c("FacileArchs4DataSet", "FacileDataStore", class(out))
+  out$samples <- FacileData::set_fds(out$samples, out)
   out
 }
 

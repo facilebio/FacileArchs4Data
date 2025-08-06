@@ -22,7 +22,8 @@ biocbox.archs4_facile_frame <- function(
   counts <- rhdf5::h5read(
     m4$h5,
     "data/expression",
-    index = list(x$h5idx, features$h5idx)) |>
+    index = list(x$h5idx, features$h5idx)
+  ) |>
     t()
   rownames(counts) <- features$feature_id
 
@@ -76,7 +77,7 @@ biocbox.archs4_facile_frame <- function(
 
 #' @noRd
 #' @export
-samples.FacileArchs4DataSet <- function(x, ..., drop_covariates = TRUE) {
+samples.FacileArchs4DataSet <- function(x, ..., drop_covariates = FALSE) {
   assert_class(x, "FacileArchs4DataSet")
   assert_flag(drop_covariates)
   out <- x$samples
@@ -115,10 +116,11 @@ assay_sample_info.FacileArchs4DataSet  <- function(
     dplyr::transmute(
       dataset,
       sample_id,
+      h5idx,
       assay = .env$assay_name,
       libsize = .data$alignedreads,
       normfactor = 1,
-      h5idx
+      singlecellprobability
     )
 
   if (is.null(samples)) {
@@ -175,8 +177,11 @@ assay_names.FacileArchs4DataSet <- function(x, default_first = TRUE, ...) {
 
 #' Retrieve assay data
 #' @export
-#'
-fetch_assay_data.archs4_facile_frame <- function(
+#' @examples
+#' m4 <- FacileArchs4DataSet()
+#' xf <- features(m4) |> filter(name %in% c("Sesn2", "Fgf21"))
+#' xs <- samples(m4) |> filter(grepl("GSE249764", dataset))
+fetch_assay_data.FacileArchs4DataSet <- function(
     x,
     features = NULL,
     samples = NULL,
@@ -187,12 +192,141 @@ fetch_assay_data.archs4_facile_frame <- function(
     as.matrix = FALSE,
     drop_samples = TRUE,
     ...,
-    prior.count = 3,
+    prior.count = 0.25,
     subset.threshold = 700,
     aggregate = FALSE,
     aggregate.by = "ewm",
     verbose = FALSE
 ) {
+  assert_flag(as.matrix)
+  assert_flag(normalized)
+  if (is.null(assay_name)) assay_name <- default_assay(x)
+  assert_choice(assay_name, assay_names(x))
+
+  aggregate.by <- match.arg(tolower(aggregate.by), c("ewm", "zscore"))
+  ainfo <- assay_info(x, assay_name)
+
+  samples.all <- samples(x)
+  if (is.null(samples)) {
+    samples <- samples.all
+  } else {
+    assert_sample_subset(samples)
+    minfo <- dplyr::select(samples.all, dataset, sample_id, h5idx)
+    samples <- samples |>
+      dplyr::inner_join(
+        minfo,
+        by = c("dataset", "sample_id"),
+        suffix = c(".insample", "")
+      )
+  }
+  assert_data_frame(samples)
+  samples <- samples |>
+    dplyr::mutate(samid = paste(dataset, sample_id, sep = "__"))
+
+  assert_integerish(samples$h5idx)
+
+  features.all <- features(x, assay_name)
+  if (is.null(features)) {
+    features <- features.all
+  } else {
+    if (is.data.frame(features)) {
+      features <- features[["feature_id"]]
+    }
+    if (is.factor(features)) features <- as.character(features)
+    if (is.character(features)) {
+      features <- filter(features.all, .data$feature_id %in% .env$features)
+    }
+    assert_data_frame(features)
+    if (!"assay" %in% colnames(features) || !is.character(features$assay)) {
+      features <- collect(features, n = Inf)
+      features[["assay"]] <- assay_name
+    }
+    assert_assay_feature_descriptor(features)
+  }
+  assert_data_frame(features)
+  assert_integerish(features$h5idx)
+  features <- dplyr::distinct(features, .data$feature_id, .keep_all = TRUE)
+  features[["assay_type"]] <- ainfo[["assay_type"]]
+
+  adat <- rhdf5::h5read(
+    x$h5,
+    "data/expression",
+    index = list(samples$h5idx, features$h5idx)
+  ) |>
+    t()
+  rownames(adat) <- features$feature_id
+  colnames(adat) <- samples$samid
+
+  if (!is.null(batch)) {
+    if (!isTRUE(normalized)) {
+      warning("`batch` parameter specified, setting `normalized` to `TRUE`")
+    }
+    normalized <- TRUE
+  }
+
+  if (normalized) {
+    # Adds sample-level assay data appropriate for whatever the assay is
+    asinfo <- assay_sample_info(x, assay_name, samples)
+    # If `samples` were passed in with any assay-level covariates, let those
+    # override what is in the database
+    custom.cols <- intersect(colnames(samples), colnames(asinfo))
+    custom.cols <- setdiff(custom.cols, c("dataset", "sample_id"))
+    if (length(custom.cols)) {
+      asinfo <- asinfo[, !colnames(asinfo) %in% custom.cols]
+    }
+    if (length(setdiff(colnames(asinfo), c("dataset", "sample_id")))) {
+      samples <- left_join(samples, asinfo, by = c("dataset", "sample_id"))
+    }
+    adat <- normalize_assay_data(adat, features, samples, batch = batch,
+                                 main = main, verbose = verbose, ...)
+  }
+
+  aggregated <- NULL
+
+  if (isTRUE(aggregate)) {
+    if (aggregate.by == "ewm") {
+      aggregated <- sparrow::eigenWeightedMean(adat, ...)
+    } else if (aggregate.by == "zscore") {
+      aggregated <- sparrow::zScore(adat, ...)
+    } else {
+      stop("Unknown aggregation method: ", aggregate.by)
+    }
+    adat <- matrix(
+      aggregated$score,
+      nrow = 1L,
+      dimnames = list("score", names(aggregated$score)))
+  }
+
+  if (!as.matrix) {
+    atype <- ainfo[["assay_type"]]
+    ftype <- ainfo[["feature_type"]]
+    vals <- FacileData:::.melt.assay.matrix(
+      adat,
+      assay_name,
+      atype,
+      ftype,
+      features
+    )
+    vals <- as_tibble(vals)
+    if (isTRUE(aggregate)) {
+      vals <- mutate(
+        vals,
+        feature_type = "aggregated",
+        feature_id = "aggregated",
+        feature_name = "aggregated"
+      )
+    }
+    vals <- samples |>
+      left_join(
+        vals,
+        by = c("dataset", "sample_id"),
+        suffix = c("", ".dropme..")) |>
+      select(-ends_with(".dropme.."))
+  } else {
+    vals <- adat
+  }
+
+  set_fds(vals, x)
 }
 
 #' Retrieve (wide) assay data

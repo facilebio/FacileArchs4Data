@@ -75,7 +75,10 @@ Archs4Client <- R6::R6Class(
       if (!in_cache) {
         cached <- list(
           samples = .load_archs4_samples(path, columns = sample_columns),
-          features = .load_archs4_features(path, self$species))
+          features = .load_archs4_features(path, self$species)
+        )
+        class(cached$samples) <- c("archs4_client_facile_frame", class(cached$samples))
+
         if (use_cache) {
           .pkgcache[[path]] <- cached
         }

@@ -30,7 +30,7 @@ Examples of using facile interface to the archs4 dataset(s).
 (m4 <- FacileArchs4DataSet("mouse"))
 ```
 ```{r}
-expt <- samples(m4, drop_covariates = FALSE) |> 
+expt <- samples(m4) |> 
   filter(grepl("GSE249764", dataset))
 ```
 
@@ -64,7 +64,10 @@ sample.info <- expt |>
 ```
 
 ```{r}
-y <- biocbox(sample.info, class = "DGEList")
+some.genes <- features(m4) |> head(4)
+exprs <- fetch_assay_data(sample.info, some.genes)
 ```
 
-
+```{r}
+y <- biocbox(sample.info, class = "DGEList")
+```

@@ -80,7 +80,6 @@
     out <- .hdf5_group_load_table(path, "meta/samples", columns = columns)
   }
   tictoc::toc(quiet = !verbose)
-  class(out) <- c("archs4_client_facile_frame", class(out))
   attr(out, "source") <- source
   out
 }
