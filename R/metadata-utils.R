@@ -18,7 +18,8 @@
 #' @return wide tibble of metadata variables from `x[[column]]`
 #' @examples
 #' a4 <- FacileArchs4Data::FacileArchs4DataSet("human")
-#' info <- samples(a4) |> dplyr::sample_n(20) |> arcsh4_split_metadata()
+#' info.raw <- samples(a4) |> dplyr::filter(dataset == "GSE212337")
+#' info <- arcsh4_split_metadata(info.raw)
 arcsh4_split_metadata <- function(
   x,
   column = "characteristics_ch1",
@@ -28,14 +29,6 @@ arcsh4_split_metadata <- function(
   keep_column = TRUE,
   ...
 ) {
-  if (FALSE) {
-    a4 <- FacileArchs4Data::FacileArchs4DataSet("human")
-    x <- samples(a4) |> dplyr::sample_n(20)
-    column <- "characteristics_ch1"
-    delim_var <- ","
-    delim_key <- ":"
-    keep_column <- TRUE
-  }
   checkmate::assert_character(x[["dataset"]])
   checkmate::assert_character(x[["sample_id"]])
   checkmate::assert_character(x[[column]])
@@ -47,14 +40,21 @@ arcsh4_split_metadata <- function(
       delim = delim_key,
       names = c("key", "value"),
       too_many = "merge",
-      cols_remove =!keep_column
+      too_few = "align_start"
     ) |>
     dplyr::mutate(
       key = janitor::make_clean_names(key, allow_dupes = TRUE),
       value = trimws(value)) |>
     tidyr::pivot_wider(names_from = "key", values_from = "value")
   if (keep_column) {
-    info <- info |>
-      dplyr::relocate(dplyr::all_of(column), .after = dplyr::last_col())
+    og <- dplyr::distinct(x, dataset, sample_id, .data[[column]])
+    info <- dplyr::left_join(info, og, by = c("dataset", "sample_id"))
   }
+
+  sample.count <- dplyr::count(info, dataset, sample_id)
+  if (any(sample.count$n) > 1) {
+    stop("split operation created duplicate rows for some samples")
+  }
+
+  info
 }
