@@ -23,6 +23,7 @@ Imports:
     arrow,
     checkmate,
     dplyr,
+    janitor,
     rhdf5,
     tictoc,
     tidyr,
