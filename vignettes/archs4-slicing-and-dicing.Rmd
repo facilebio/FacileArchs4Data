@@ -14,60 +14,135 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+## Overview
+
+In this vignette, we'll provide examples of how to analyze the RNA-seq data
+from an SOD1 ALS mouse model ([GSE135539][]).
+
+[GSE135539]: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE135539
+
+## Setup
+
+First [download the latest mouse and human archs4 hdf5 files][archs4dl]
+and place them both in the same directory. Let's call this directory
+`ARCSH4_DIR`.
+
+You can define the global `archs4.data_dir` R option to load these files by
+species name, or just point the `Archs4DataSet` constructor to the specific
+file itself, like so:
+
+```{r}
+# options(archs4.data_dir = Sys.getenv("ARCSH4_DIR"))
 library(tidyverse)
 library(FacileData)
 devtools::load_all(".")
+
+(a4m <- FacileArchs4DataSet("mouse"))
 ```
 
-## Overview
+[archs4dl]: https://archs4.org/download
 
-Examples of using facile interface to the archs4 dataset(s).
+## Sample Preparation
 
-## Usage
+First extract the samples from the arcsh4 dataset for [GSE135539][].
 
 ```{r}
-(m4 <- FacileArchs4DataSet("mouse"))
-```
-```{r}
-expt <- samples(m4) |> 
-  filter(grepl("GSE249764", dataset))
+samples.raw <- samples(a4m) |> 
+  filter(dataset == "GSE135539")
 ```
 
-Curate metadata
+One challenge with analyzing data fresh off of GEO is manipulating the
+sample-level metadata so that samples are annotated for easy analysis.
+
+Sometimes the `characteristics_ch1` column of the sample table has better,
+semi-structured information to parse out the sample level covariates.
+Other times you have to do manual munging of the `title` column, or others.
+
+The code below provides a quick/dirty dplyr workflow to parse out information
+found in the `"title"` column to relevant information (genotype, etc.) for 
+downstream analysis.
+
+Note that it is important to keep the h5idx column returned from `samples()`
+in order to easily materialize expression data in different ways.
 
 ```{r}
-info.cols <- c("tissue", "sex", "age", "genotype")
-sinfo <- expt |> 
-  transmute(dataset, sample_id, h5idx, info = characteristics_ch1) |> 
-  tidyr::separate_wider_delim(
-    info,
-    delim = ",",
-    names = info.cols
-  ) |> 
-  mutate(across(all_of(info.cols), ~ trimws(sub(".*?:", "", .x)))) |> 
-  mutate(
-    geno = genotype,
-    genotype = sub("Sipa1l2-/-", "Sipa1l2_KO", genotype, fixed = TRUE),
-    genotype = sub("-PMP22", "", genotype, fixed = TRUE),
-    genotype = sub(" ", "__", genotype),
-    genotype = factor(genotype, c("WT", "Sipa1l2_KO", "C3", "C3__Sipa1l2_KO")),
-    sex = ifelse(sex == "F", "female", "male")
-  )
+descr <- sub("Sample \\d+: ", "", samples.raw$title)
+dparts <- strsplit(descr, " ")
 
-sample.info <- expt |> 
+samples.clean <- samples.raw |> 
   transmute(
+    h5idx,
     dataset,
-    sample_id
+    sample_id,
+    description = descr,
+    genotype = ifelse(grepl("wt", descr, ignore.case = TRUE), "WT", "SOD1"),
+    treatment = dplyr::case_when(
+      grepl("untreated", descr, ignore.case = TRUE) ~ "untreated",
+      grepl("control", descr, ignore.case = TRUE) ~ "untreated",
+      grepl("shrna", descr, ignore.case = TRUE) ~ "shRNA",
+      grepl("sham", descr, ignore.case = TRUE) ~ "sham",
+      .default = "wtf"),
+    region = sapply(dparts, tail, 1),
+    subject_id = sapply(dparts, \(x) paste0("m", x[length(x) - 1])),
+    batch = ifelse(grepl("Batch 1", characteristics_ch1), "b1", "b2")
+  ) |>
+  dplyr::mutate(
+    group = paste(region, genotype, treatment, sep = "__"),
+    genotype = factor(genotype) |> relevel("WT"),
+    treatment = factor(treatment, c("untreated", "sham", "shRNA")),
+    .after = "sample_id") |>
+  dplyr::arrange(region, genotype, treatment) |>
+  dplyr::mutate(group = factor(group, unique(group)))
+```
+
+```{r}
+head(samples.clean) |> 
+  select(sample_id, group, genotype, region)
+```
+
+
+Now, with this data.frame, you can easily materialize a DGEList to perform
+"standard" analysis using edgeR, like so:
+
+```{r}
+y <- biocbox(samples.clean, class = "DGEList")
+head(y$samples[,1:5])
+```
+
+And you can also use the FacileAnalysis / FacileAnalysisShine packages to
+leverage the hybrid code/gui driven analysis.
+
+Here we'll perform a DGE analysis on the SOD1 vs WT mice using the samples
+from the lumbar spinal cord
+
+```{r, message=FALSE, warning=FALSE}
+library(FacileAnalysisShine)
+
+dge <- samples.clean |> 
+  filter(
+    treatment == "untreated",
+    region == "lumbar"
   ) |> 
-  left_join(sinfo, by = c("dataset", "sample_id"))
+  flm_def("genotype", "SOD1", "WT") |> 
+  fdge(method = "voom", with_sample_weights = TRUE)
+```
+
+Now you can visualize and whatever else "as expected"
+
+```{r}
+tidy(dge) |> 
+  arrange(desc(logFC)) |> 
+  filter(padj <= 0.05) |> 
+  select(feature_id, name, logFC, padj, pval)
 ```
 
 ```{r}
-some.genes <- features(m4) |> head(4)
-exprs <- fetch_assay_data(sample.info, some.genes)
+viz(dge, filter(tidy(dge), name == "Cst7"))
 ```
 
-```{r}
-y <- biocbox(sample.info, class = "DGEList")
+Or drop down into interactive exploration of these results:
+
+```{r, eval = FALSE}
+shine(dge)
 ```
+
