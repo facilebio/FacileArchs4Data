@@ -9,13 +9,26 @@
 #'   Defaults to `dirname(x)`
 #' @examples
 #' archs4_cache_fn("~/workspace/data/archs4/v2.6/mouse_gene_v2.6.h5")
-archs4_cache_fn <- function(x, outdir = dirname(x), ...) {
+archs4_cache_fn <- function(x, outdir = NULL, ...) {
+  checkmate::assert_string(x) # one hdf5 file at a time
   checkmate::assert_file_exists(x, extension = "h5")
-  checkmate::assert_directory_exists(outdir, "w")
+  if (!is.null(outdir)) assert_directory_exists(outdir, "w")
+  # outfn <- list(
+  #   samples = sub("h5$", "samples.parquet", basename(x))
+  # )
+  species <- .infer_species_from_filename(x)
+  basefn <- sub(".*?__", "", basename(x)) # strip off the data on the file
   outfn <- list(
-    samples = sub("h5$", "samples.parquet", basename(x))
+    samples = sprintf(
+      "%s__%s.samples.parquet",
+      archs4_creation_date(x),
+      sub("\\.(h5|hdf5)$", "", basefn)
+    )
   )
-  lapply(outfn, function(fn) file.path(outdir, fn))
+  if (!is.null(outdir)) {
+    outfn <- lapply(outfn, function(fn) file.path(outdir, fn))
+  }
+  outfn
 }
 
 #' Save the samples and the gene feature info for an archs4 dataset as paruqet

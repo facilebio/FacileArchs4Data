@@ -4,7 +4,7 @@
 \alias{archs4_cache_fn}
 \title{File paths for cached objects created from an archs4 hdf5 file}
 \usage{
-archs4_cache_fn(x, outdir = dirname(x), ...)
+archs4_cache_fn(x, outdir = NULL, ...)
 }
 \arguments{
 \item{x}{the path to an archs4 data file}

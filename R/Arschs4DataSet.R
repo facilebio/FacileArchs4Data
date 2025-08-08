@@ -19,29 +19,40 @@ FacileArchs4DataSet <- function(
   if (!test_file_exists(x, extension = c("h5", "hdf5"))) {
     x <- match.arg(x, c("human", "mouse"))
     species <- x
-    assert_directory_exists(data_dir, "r")
-    fn.regex <- sprintf(".*%s.*\\.(h5|hdf5)$", species)
-    x <- dir(data_dir, fn.regex, full.names = TRUE)
-    if (length(x) == 0L) {
+    info <- archs4_dir_info(data_dir) |>
+      dplyr::filter(.data$species == .env$species)
+    if (nrow(info) == 0L) {
       stop("Can not archs4 hdf5 file for species: ", species)
     }
-    if (length(x) > 1L) {
-      stop(
-        "More than one hdf5 file found for speies: ",
-        paste(x, collapse = ",")
-      )
+    if (nrow(info) > 1L) {
+      warning("Multiple files found for species, taking latest version")
+      info <- info[1,]
     }
-  }
-  assert_file_exists(x, "r")
-  if (is.null(species)) {
-    if (grepl("mouse", basename(x), ignore.case = TRUE)) {
-      species <- "mouse"
-    } else {
-      species <- "human"
-    }
+    out <- list(
+      h5 = info$path,
+      path.sample_cache = unname(info$sample_cache_path),
+      species = info$species
+    )
+  } else {
+    out <- list(
+      h5 = x,
+      path.sample_cache = unname(archs4_cache_fn(x, outdir = dirname(x))),
+      species = .infer_species_from_filename(x)
+    )
   }
 
-  samples.all <- .load_archs4_samples(x, use_cache = TRUE) |>
+  assert_file_exists(out$h5, "r")
+  out$meta <- .load_archs4_metadata(out$h5)
+  out$remove_sc <- assert_flag(remove_sc)
+  out$threshold_sc = assert_number(threshold_sc, lower = 0, upper = 1)
+  out$features <- .load_archs4_features(out$h5, out$species)
+
+  samples.all <- .load_archs4_samples(
+    out$h5,
+    use_cache = TRUE,
+    sample_cache_path = out$path.sample_cache,
+    meta = out$meta
+  ) |>
     dplyr::rename(dataset = "series_id", sample_id = "sample")
   class(samples.all) <- c(
     "archs4_facile_frame",
@@ -49,17 +60,8 @@ FacileArchs4DataSet <- function(
     class(samples.all)
   )
 
-  out <- list(
-    h5 = x,
-    samples = samples.all,
-    features = .load_archs4_features(x, species),
-    species = species,
-    remove_sc = assert_flag(remove_sc),
-    threshold_sc = assert_number(threshold_sc, lower = 0, upper = 1)
-  )
-
+  out$samples <- samples.all
   out$sample_source <- attr(out$samples, "source")
-
   class(out) <- c("FacileArchs4DataSet", "FacileDataStore", class(out))
   out$study_distro <- dplyr::count(archs4_studies(out), likely_sc)
   out$samples <- FacileData::set_fds(out$samples, out)
@@ -159,6 +161,65 @@ archs4_sample_search <- function(
   out
 }
 
+#' Extract metadata from arcsh4 dataset
+#'
+#' @export
+#' @param x a FacileArchs4DataSet or the path to the source hdf5 data file
+#' @param variable the name of the variable to extract from the metadata field.
+#'   If `NULL` (default), all values will be returned.
+#' @param ... stuff and things
+#' @param multiple_ok If `TRUE`, then `x` can be a pointer to many hdf5 files
+#' @return a list of metadata pulled from the archs4 hdf5 file. If `x` is
+#'   a list of multiple hdf5 files, then a tibble of metadata is returned,
+#'   each row correxponds to the file passed in `x`
+archs4_meta <- function(
+  x,
+  variable = NULL,
+  ...,
+  multiple_ok = is.character(x)
+) {
+  assert_character(variable, null.ok = TRUE)
+  if (is(x, "FacileArchs4DataSet")) {
+    meta <- list(x$meta)
+  } else {
+    assert_character(x, min.len = 1L, max.len = if (multiple_ok) NULL else 1L)
+    assert_file_exists(x, extension = "h5")
+    meta <- lapply(x, .load_archs4_metadata)
+  }
+  if (is.null(variable) || length(variable) == 0L) {
+    variable <- names(meta[[1L]])
+  }
+  var.bad <- setdiff(variable, names(meta[[1L]]))
+  if (length(var.bad)) {
+    warning("Unknown meta variables: ", paste(var.bad, collapse = ","))
+    variable <- setdiff(variable, var.bad)
+  }
+  meta <- lapply(meta, "[", variable)
+  if (length(meta) == 1L) meta[[1L]] else dplyr::bind_rows(meta)
+}
+
+#' Return the version of an arcsh4 dataset
+#' @export
+#' @inheritParams archs4_meta
+#' @return the version string from the archs4 hdf5 file
+archs4_version <- function(x, ...) {
+  archs4_meta(x)$version
+}
+
+#' Return the registered creation date of an arcsh4 dataset
+#' @export
+#' @inheritParams archs4_meta
+#' @param string return the data as a string (default) or a `Date` object
+#' @param ... stuff and things
+#' @param format the format return the date in
+#' @return the creation date registered in archs4 hdf5 file
+archs4_creation_date <- function(x, string = TRUE, ..., format = "%Y-%m-%d") {
+  assert_flag(string)
+  assert_string(format)
+  out <- archs4_meta(x)$creation_date
+  if (string) format(out, format) else out
+}
+
 #' @noRd
 #' @export
 print.FacileArchs4DataSet <- function(x, ...) {
@@ -171,10 +232,11 @@ format.FacileArchs4DataSet <- function(x, ...) {
   ntotal <- sum(x$study_distro$n)
   nbulk <- sum(x$study_distro$n[!x$study_distro$likely_sc])
   nsc <- ntotal - nbulk
+
+  meta <- sprintf("v%s [%s]", archs4_version(x), archs4_creation_date(x))
   out <- paste(
     "=======================================================================\n",
-    name(x),
-    "\n",
+    sprintf("%s (%s)\n", name(x), meta),
     "-----------------------------------------------------------------------\n",
     sprintf("  path: %s\n", x$h5),
     sprintf("  studies: %s\n", prettyNum(ntotal, big.mark = ",")),

@@ -1,10 +1,22 @@
 # Utility functions to read archs4 specific files ------------------------------
+
+#' @noRd
 .default_meta_fields <- function() {
   c(
     # "geo_accession", "series_id",
     "characteristics_ch1", "extract_protocol_ch1", "source_name_ch1", "title")
 }
 
+#' @noRd
+.load_archs4_metadata <- function(x, ..., as_list = TRUE) {
+  meta <- .hdf5_group_load_table(x, "meta/info")
+  meta[["h5idx"]] <- NULL
+  names(meta) <- janitor::make_clean_names(names(meta))
+  meta$creation_date <- as.Date(meta$creation_date, "%m/%d/%Y")
+  if (as_list) as.list(meta) else meta
+}
+
+#' @noRd
 .load_archs4_features <- function(path, species, verbose = FALSE, ...) {
   tictoc::tic("load features")
   out <- .hdf5_group_load_table(path, "meta/genes")
@@ -21,13 +33,17 @@
     meta = biotype)
 }
 
+#' @noRd
 .load_archs4_samples <- function(
     path,
     columns = NULL,
     use_cache = TRUE,
+    sample_cache_path = NULL,
+    meta = NULL,
     verbose = FALSE,
     ...
 ) {
+  assert_file_exists(path, "r")
   if (isTRUE(columns == "all")) {
     columns <- NULL
   } else {
@@ -54,15 +70,18 @@
   tictoc::tic("sample load")
   out <- NULL
   source <- "h5"
+
   if (use_cache) {
-    cfn <- archs4_cache_fn(path)$samples
-    if (!file.exists(cfn)) {
+    if (is.null(sample_cache_path)) {
+      sample_cache_path <- archs4_cache_fn(path, dirname(path))$samples
+    }
+    if (!file.exists(sample_cache_path)) {
       warning(
         "Samples cache not generated, consider running ",
         "`archs4_create_cache_files(", path, ")`"
       )
     } else {
-      out <- arrow::read_parquet(cfn)
+      out <- arrow::read_parquet(sample_cache_path)
       bad.cols <- setdiff(columns, colnames(out))
       if (length(bad.cols) > 0) {
         warning(
@@ -72,7 +91,7 @@
       }
       columns <- unique(c("h5idx", columns))
       out <- dplyr::select(out, dplyr::any_of(columns))
-      source <- cfn
+      source <- sample_cache_path
     }
   }
 
@@ -84,6 +103,7 @@
   out
 }
 
+#' @noRd
 .hdf5_group_info <- function(x, group = "meta/genes") {
   if (checkmate::test_string(x)) {
     checkmate::assert_file_exists(x, "r", extension = "h5")
@@ -97,6 +117,7 @@
   group_info
 }
 
+#' @noRd
 .hdf5_group_load_table <- function(x, group = "meta/genes", columns = NULL) {
   group_info <- .hdf5_group_info(x, group)
   if (is.character(columns)) {
