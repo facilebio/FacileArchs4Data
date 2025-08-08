@@ -14,7 +14,8 @@ FacileArchs4DataSet <- function(
   data_dir = getOption("archs4.data_dir", NULL),
   use_cache = TRUE,
   remove_sc = TRUE,
-  threshold_sc = 0.5
+  threshold_sc = 0.5,
+  .duckdb = FALSE
 ) {
   if (!test_file_exists(x, extension = c("h5", "hdf5"))) {
     x <- match.arg(x, c("human", "mouse"))
@@ -51,9 +52,11 @@ FacileArchs4DataSet <- function(
     out$h5,
     use_cache = TRUE,
     sample_cache_path = out$path.sample_cache,
-    meta = out$meta
-  ) |>
-    dplyr::rename(dataset = "series_id", sample_id = "sample")
+    create_cache = create_cache,
+    .duckdb = .duckdb,
+    ...
+  )
+
   class(samples.all) <- c(
     "archs4_facile_frame",
     "facile_frame",
@@ -61,6 +64,7 @@ FacileArchs4DataSet <- function(
   )
 
   out$samples <- samples.all
+  out$duckdb <- !test_data_frame(samples.all)
   out$sample_source <- attr(out$samples, "source")
   class(out) <- c("FacileArchs4DataSet", "FacileDataStore", class(out))
   out$study_distro <- dplyr::count(archs4_studies(out), likely_sc)
@@ -99,6 +103,7 @@ archs4_studies <- function(
     hits <- archs4_sample_search(x, sample_search, meta_fields, ignore.case) |>
       dplyr::summarize(search_hits = dplyr::n(), .by = "series_id")
   }
+
   smry <- samples(x) |>
     dplyr::summarize(
       nsamples = dplyr::n(),
@@ -107,6 +112,7 @@ archs4_studies <- function(
       search_hits = 0L,
       .by = "dataset"
     )
+
   if (!is.null(hits) && nrow(hits) > 0L) {
     smry <- smry |>
       dplyr::select(-search_hits) |>

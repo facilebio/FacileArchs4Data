@@ -37,68 +37,83 @@
 .load_archs4_samples <- function(
     path,
     columns = NULL,
-    use_cache = TRUE,
+    rewrite_cache = FALSE,
     sample_cache_path = NULL,
-    meta = NULL,
     verbose = FALSE,
-    ...
+    ...,
+    .duckdb = FALSE
 ) {
   assert_file_exists(path, "r")
+  assert_logical(rewrite_cache)
+  assert_logical(.duckdb)
+
+  req.columns <- c(
+    "h5idx",
+    "dataset",
+    "sample_id",
+    "alignedreads",
+    "singlecellprobability",
+    "characteristics_ch1",
+    "source_name_ch1",
+    "title"
+  )
+
   if (isTRUE(columns == "all")) {
     columns <- NULL
   } else {
     if (is.null(columns) || length(columns) == 0L) {
       columns <- c(
-        "series_id",     # GSE160572
-        "geo_accession", # GSM5899130
-        "sample",        # GSM5899130
-        "source_name_ch1",
-        "title",
-        "singlecellprobability",
-        "alignedreads",
+        req.columns,
         "molecule_ch1", # cyotplasmic RNA, nuclear RNA, polyA RNA, etc.
+        "extract_protocol_ch1",
         "library_source",    # transcriptomic, transcriptomic singlecell (not reliable)
         "library_selection", # CAGE, cDNA (vast majority), RACE, other
         "platform_id", # GPL24676, GPL20301, ...
         "instrument_model", # Illumina HiSeq 4000, etc.
-        "data_processing",
-        "extract_protocol_ch1",
-        "characteristics_ch1"
+        "data_processing"
       )
     }
   }
+  columns <- unique(c(req.columns, columns))
+
   tictoc::tic("sample load")
   out <- NULL
+
   source <- "h5"
 
-  if (use_cache) {
-    if (is.null(sample_cache_path)) {
-      sample_cache_path <- archs4_cache_fn(path, dirname(path))$samples
-    }
-    if (!file.exists(sample_cache_path)) {
-      warning(
-        "Samples cache not generated, consider running ",
-        "`archs4_create_cache_files(", path, ")`"
-      )
+  if (is.null(sample_cache_path)) {
+    sample_cache_path <- archs4_cache_fn(path, dirname(path))$samples
+  }
+  assert_directory_exists(dirname(sample_cache_path), "w")
+
+  if (!file.exists(sample_cache_path) || rewrite_cache) {
+    out <- .hdf5_group_load_table(path, "meta/samples", columns = NULL) |>
+      dplyr::rename(dataset = series_id, sample_id = geo_accession) |>
+      dplyr::relocate(out, dplyr::all_of(req.columns), .before = 1L)
+    arrow::write_parquet(out, sample_cache_path)
+  } else {
+    source <- sample_cache_path
+    if (.duckdb) {
+      out <- duckdb::duckdb() |>
+        DBI::dbConnect() |>
+        dplyr::tbl(sprintf("read_parquet('%s')", sample_cache_path))
     } else {
       out <- arrow::read_parquet(sample_cache_path)
-      bad.cols <- setdiff(columns, colnames(out))
-      if (length(bad.cols) > 0) {
-        warning(
-          "This columns not present in samples [ignoring]: ",
-          paste(bad.cols, collapse = ",")
-        )
-      }
-      columns <- unique(c("h5idx", columns))
-      out <- dplyr::select(out, dplyr::any_of(columns))
-      source <- sample_cache_path
     }
   }
 
-  if (is.null(out)) {
-    out <- .hdf5_group_load_table(path, "meta/samples", columns = columns)
+  if (!inherits(out, "tbl_dbi") && !is.null(columns)) {
+    bad.cols <- setdiff(columns, colnames(out))
+    if (length(bad.cols) > 0) {
+      warning(
+        "This columns not present in samples [ignoring]: ",
+        paste(bad.cols, collapse = ",")
+      )
+    }
+    out <- dplyr::select(out, dplyr::any_of(columns))
   }
   tictoc::toc(quiet = !verbose)
+
   attr(out, "source") <- source
   out
 }
