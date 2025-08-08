@@ -42,5 +42,6 @@ Let's bust this up into usable data.frame columns.
 }
 \examples{
 a4 <- FacileArchs4Data::FacileArchs4DataSet("human")
-info <- samples(a4) |> dplyr::sample_n(20) |> arcsh4_split_metadata()
+info.raw <- samples(a4) |> dplyr::filter(dataset == "GSE212337")
+info <- arcsh4_split_metadata(info.raw)
 }

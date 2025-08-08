@@ -500,7 +500,7 @@ covariate_definitions.FacileArchs4DataSet <- function(x, as.list = TRUE, ...) {
 
 #' @noRd
 #' @export
-fetch_custom_sample_covariates.FacileBiocDataStore <- function(
+fetch_custom_sample_covariates.FacileArchs4DataSet <- function(
   x,
   covariates = NULL,
   samples = NULL,
