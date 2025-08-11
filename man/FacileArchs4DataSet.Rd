@@ -11,7 +11,8 @@ FacileArchs4DataSet(
   data_dir = getOption("archs4.data_dir", NULL),
   use_cache = TRUE,
   remove_sc = TRUE,
-  threshold_sc = 0.5
+  threshold_sc = 0.5,
+  .duckdb = FALSE
 )
 }
 \arguments{

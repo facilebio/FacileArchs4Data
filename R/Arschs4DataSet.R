@@ -57,17 +57,17 @@ FacileArchs4DataSet <- function(
     ...
   )
 
-  class(samples.all) <- c(
-    "archs4_facile_frame",
-    "facile_frame",
-    class(samples.all)
-  )
-
   out$samples <- samples.all
   out$duckdb <- !test_data_frame(samples.all)
   out$sample_source <- attr(out$samples, "source")
   class(out) <- c("FacileArchs4DataSet", "FacileDataStore", class(out))
   out$study_distro <- dplyr::count(archs4_studies(out), likely_sc)
+
+  class(out$samples) <- c(
+    "archs4_facile_frame",
+    "facile_frame",
+    class(out$samples)
+  )
   out$samples <- FacileData::set_fds(out$samples, out)
   out
 }
@@ -99,19 +99,33 @@ archs4_studies <- function(
   assert_number(threshold_sc_likely, lower = 0.05, upper = 1)
 
   hits <- NULL
-  if (checkmate::test_string(sample_search)) {
+  if (checkmate::test_string(sample_search) && !x$duckdb) {
     hits <- archs4_sample_search(x, sample_search, meta_fields, ignore.case) |>
       dplyr::summarize(search_hits = dplyr::n(), .by = "series_id")
   }
 
-  smry <- samples(x) |>
-    dplyr::summarize(
-      nsamples = dplyr::n(),
-      nsc = sum(singlecellprobability >= threshold_sc),
-      likely_sc = nsc / nsamples >= threshold_sc_likely,
-      search_hits = 0L,
-      .by = "dataset"
-    )
+  if (x$duckdb) {
+    smry <- samples(x) |>
+      dplyr::summarize(
+        nsamples = dplyr::n(),
+        nsc = sum(singlecellprobability >= threshold_sc, na.rm = TRUE),
+        .by = "dataset"
+      ) |>
+      dplyr::collect() |>
+      dplyr::mutate(
+        likely_sc = nsc / nsamples >= threshold_sc_likely,
+        search_hits = 0L,
+      )
+  } else {
+    smry <- samples(x) |>
+      dplyr::summarize(
+        nsamples = dplyr::n(),
+        nsc = sum(singlecellprobability >= threshold_sc, na.rm = TRUE),
+        likely_sc = nsc / nsamples >= threshold_sc_likely,
+        search_hits = 0L,
+        .by = "dataset"
+      )
+  }
 
   if (!is.null(hits) && nrow(hits) > 0L) {
     smry <- smry |>

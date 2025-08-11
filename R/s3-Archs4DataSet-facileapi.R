@@ -25,7 +25,7 @@ biocbox.archs4_facile_frame <- function(
   with_h5idx = FALSE,
   ...
 ) {
-  assert_class(x, "archs4_facile_frame")
+  x <- assert_class(x, "archs4_facile_frame") |> dplyr::collect()
   assert_character(x$dataset)
   assert_character(x$sample_id)
   assert_integerish(x$h5idx)
@@ -50,6 +50,7 @@ biocbox.archs4_facile_frame <- function(
   # ) |>
   #   t()
   # rownames(counts) <- features$feature_id
+
   A <- fetch_assay_data(
     afds,
     features,
@@ -170,8 +171,12 @@ assay_sample_info.FacileArchs4DataSet <- function(
   assay_name = "counts",
   samples = NULL,
   ...,
+  verbose = FALSE,
+  conflict_drop = c("samples", "fds"),
   .developer = getOption("fbioc.developer", FALSE)
 ) {
+  conflict_drop <- match.arg(conflict_drop)
+  conflict_keep <- setdiff(c("samples", "fds"), conflict_drop)
   assert_choice(assay_name, assay_names(x))
   if (assay_name != "counts") {
     warning(
@@ -199,21 +204,27 @@ assay_sample_info.FacileArchs4DataSet <- function(
       left_join(
         asi.all,
         by = c("dataset", "sample_id"),
-        suffix = c(".samples", "")
+        suffix = c(".samples", ".fds")
       )
-    conflicted <- colnames(out)[endsWith(colnames(out), ".samples")]
-    if (length(conflicted) > 1L) {
-      waring(
-        "assay information colums already found in samples frame: ",
-        paste(conflicted, collapse = ",")
-      )
-    }
-    noinfo <- dplyr::filter(out, is.na(libsize))
-    if (nrow(noinfo) > 0L) {
-      warning(
-        "These samples were not found in archs4 dataset: ",
-        paste(noinfo$sample_id, collapse = ",")
-      )
+
+    conflicted <- colnames(out)[grepl("\\.(samples|fds)$", colnames(out))]
+    if (length(conflicted) > 0L) {
+      if (verbose) {
+        warning(
+          "conflicting assay column information in samples and fds, will drop",
+          "values from `", conflict_drop, "`: ",
+          paste(conflicted, collapse = ",")
+        )
+      }
+      out <- dplyr::select(out, -dplyr::ends_with(conflict_drop))
+      colnames(out) <- sub(paste0("\\.", conflict_keep, "$"), "", colnames(out))
+      noinfo <- dplyr::filter(out, is.na(libsize))
+      if (nrow(noinfo) > 0L) {
+        warning(
+          "These samples were not found in archs4 dataset: ",
+          paste(noinfo$sample_id, collapse = ",")
+        )
+      }
     }
   }
   out

@@ -4,7 +4,7 @@
 \alias{archs4_dir_info}
 \title{List the archs4 files in a directory}
 \usage{
-archs4_dir_info(x, ...)
+archs4_dir_info(x = getOption("archs4.data_dir"), ...)
 }
 \arguments{
 \item{x}{the directory to look inside}
