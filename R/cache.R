@@ -1,6 +1,5 @@
 # Some cache-realted functions.
 
-
 #' File paths for cached objects created from an archs4 hdf5 file
 #'
 #' @export
@@ -54,4 +53,38 @@ archs4_create_cache_files <- function(x, outdir = dirname(x), ...) {
   xsamples <- .hdf5_group_load_table(x, "meta/samples", columns = NULL)
   arrow::write_parquet(xsamples, outfn$samples)
   invisible(outfn)
+}
+
+#' Pull doen gse experiment information
+#' @export
+archs4_cache_experiment_details <- function(
+  x,
+  ncores = parallel::detectCores() - 1,
+  outdir = NULL,
+  ...
+) {
+  checkmate::assert_class(x, "FacileArchs4DataSet")
+  if (is.null(outdir)) {
+    outdir <- sub("h5", "cache/series_info", x$h5)
+  }
+  if (!dir.exists(outdir)) {
+    stopifnot(dir.create(outdir, recursive = TRUE))
+  }
+  checkmate::assert_directory(outdir, "w")
+  gseurl <- "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi"
+
+  geoids <- samples(x) |>
+    dplyr::count(dataset) |>
+    dplyr::collect() |>
+    tidyr::separate_longer_delim(dataset, ",")
+
+  geoids <- head(geoids, 20)
+  # geoids$dl <- parallel::mclapply(head(geoids$dataset, 20), function(gid) {
+  geoids$dl <- lapply(geoids$dataset, function(gid) {
+    tryCatch({
+      GEOquery::getGEOfile(gid, destdir = outdir, AnnotGPL = FALSE, amount = "quick")
+    }, error = function(e) NA_character_)
+  })
+  # }, mc.preschedule = TRUE, mc.cores = 1)
+  geoids
 }
