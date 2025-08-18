@@ -78,7 +78,7 @@ archs4_cache_experiment_details <- function(
     dplyr::collect() |>
     tidyr::separate_longer_delim(dataset, ",")
 
-  geoids <- head(geoids, 20)
+  # geoids <- head(geoids, 20)
   # geoids$dl <- parallel::mclapply(head(geoids$dataset, 20), function(gid) {
   geoids$dl <- lapply(geoids$dataset, function(gid) {
     tryCatch({
