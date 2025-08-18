@@ -26,7 +26,7 @@ fuzzy_search <- function(
   remove_sc = TRUE,
   threshold_sc = 0.5
 ) {
-  assert_data_frame(x, "data.frame")
+  assert_data_frame(x)
   assert_string(regex)
   assert_flag(remove_sc)
   if (is.null(meta_fields)) {

@@ -141,6 +141,7 @@ archs4_studies <- function(
 #'
 #' This function is fashioned after the archs4py.meta() function.
 #'
+#' @export
 #' @seealso https://github.com/MaayanLab/archs4py/blob/main/archs4py/data.py#L27
 #' @param x A FacileArchs4DataSet or a subset of its sample frame
 #' @param regex the regular expression to use for search
