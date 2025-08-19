@@ -42,6 +42,11 @@ FacileArchs4DataSet <- function(
     )
   }
 
+  out$path.series_info <- file.path(
+    sub("samples.parquet$", "cache", out$path.sample_cache),
+    "series_info"
+  )
+
   assert_file_exists(out$h5, "r")
   out$meta <- .load_archs4_metadata(out$h5)
   out$remove_sc <- assert_flag(remove_sc)

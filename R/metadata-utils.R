@@ -72,6 +72,8 @@ archs4_split_metadata <- function(
       tidyr::pivot_wider(names_from = "key", values_from = "value")
   }
   kv <- strsplit(x[[column]], delim_key)
+
+  # create the key:value long table
   info <- lapply(seq_along(kv), function(i) {
     crap <- trimws(kv[[i]])
     if (length(crap) == 2L) {
@@ -88,6 +90,13 @@ archs4_split_metadata <- function(
     names(vals) <- janitor::make_clean_names(keys)
     dplyr::as_tibble(as.list(vals))
   }) |> dplyr::bind_rows()
+
+  # change order of columns so that the columns with most variety are first:last
+  vcount <- lapply(info, table)
+  o <- order(sapply(vcount, length), decreasing = TRUE)
+  info <- info[, o]
+  variables <- colnames(info)
+
   info <- dplyr::bind_cols(dplyr::select(x, dataset, sample_id), info)
   if (keep_column) {
     og <- dplyr::distinct(x, dataset, sample_id, .data[[column]])
@@ -100,17 +109,14 @@ archs4_split_metadata <- function(
   }
 
   if (append) {
-    icols <- setdiff(colnames(info), c("dataset", "sample_id"))
-    axe.cols <- intersect(icols, colnames(x))
-
+    axe.cols <- intersect(variables, colnames(x))
     out <- x |>
       dplyr::select(-dplyr::all_of(axe.cols)) |>
       dplyr::left_join(info, by = c("dataset", "sample_id")) |>
-      dplyr::relocate(dplyr::all_of(icols), .after = "sample_id")
-    attr(out, "parsed") <- setdiff(icols, "characteristics_ch1")
+      dplyr::relocate(dplyr::all_of(variables), .after = "sample_id")
   } else {
     out <- info
   }
-
+  attr(out, "parsed") <- variables
   out
 }
