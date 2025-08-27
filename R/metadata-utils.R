@@ -40,6 +40,14 @@
 #' info <- archs4_split_metadata(info.raw)
 #' info |> select(h5idx:alignedreads)
 #' table(info$genotype)
+#'
+#' # some datasets have "sacred" names in the key/var combos, like 'sample_id'
+#' # in this case `_var` is appended to the end of it
+#' info.raw <- samples(a4h) |> dplyr::filter(dataset == "GSE172367,GSE172368")
+#' info <- archs4_split_metadata(info.raw)
+#' dplyr::select(info, dplyr::starts_with("sample_id"))
+#'
+#' # Human GSE57488 is returning columns in wrong order?
 archs4_split_metadata <- function(
   x,
   column = "characteristics_ch1",
@@ -93,11 +101,33 @@ archs4_split_metadata <- function(
 
   # change order of columns so that the columns with most variety are first:last
   vcount <- lapply(info, table)
-  o <- order(sapply(vcount, length), decreasing = TRUE)
-  info <- info[, o]
+  vn <- sapply(vcount, length)
+
+  # remove things (columns) that look like identifiers
+  vn <- vn[vn/nrow(info) < 0.8]
+  # remove numeric columns from group sorting
+  isnumeric <- sapply(info, function(vv) {
+    suppressWarnings(mean(is.na(as.numeric(vv))) < 0.25)
+  })
+  vn <- vn[!names(vn) %in% names(isnumeric)[isnumeric]]
+
+  o <- order(vn, decreasing = TRUE)
+
+  sortcols <- names(vn)[o]
+  restcols <- setdiff(colnames(info), sortcols)
+  colorder <- c(sortcols, restcols)
+  info <- dplyr::select(info, dplyr::all_of(colorder))
+
+  rename <- colnames(info) %in% c("dataset", "sample_id")
+  if (any(rename)) {
+    colnames(info)[rename] <- paste0(colnames(info)[rename], "_var")
+  }
+
   variables <- colnames(info)
 
-  info <- dplyr::bind_cols(dplyr::select(x, dataset, sample_id), info)
+  info <- dplyr::select(x, dataset, sample_id) |>
+    dplyr::bind_cols(info)
+
   if (keep_column) {
     og <- dplyr::distinct(x, dataset, sample_id, .data[[column]])
     info <- dplyr::left_join(info, og, by = c("dataset", "sample_id"))
@@ -118,5 +148,6 @@ archs4_split_metadata <- function(
     out <- info
   }
   attr(out, "parsed") <- variables
+  attr(out, "sorton") <- sortcols
   out
 }

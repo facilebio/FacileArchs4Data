@@ -7,7 +7,7 @@
 assay_info.Archs4Client <- function(x, assay_name = NULL, ...) {
   info <- dplyr::tribble(
     # do we want to add TPM here? -- we can technically calculate on fly
-    ~assay,   ~assay_type, ~feature_type, ~description,         ~nfeatures,       ~storatge_mode,
+    ~assay,   ~assay_type, ~feature_type, ~description,         ~nfeatures,       ~storage_mode,
     "counts", "rnaseq",    "ensgid",      "counts from archs4", nrow(x$features), "integer"
   )
   info

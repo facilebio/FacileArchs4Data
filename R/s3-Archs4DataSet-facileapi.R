@@ -242,7 +242,7 @@ assay_info.FacileArchs4DataSet <- function(x, assay_name = NULL, ...) {
     ~feature_type,
     ~description,
     ~nfeatures,
-    ~storatge_mode,
+    ~storage_mode,
     "counts",
     "rnaseq",
     "ensgid",
@@ -452,7 +452,12 @@ fetch_sample_covariates.FacileArchs4DataSet <- function(
   if (is.null(samples)) {
     stop("You don't want to call fetch_sample_covariates on all of archs4")
   } else {
-    assert_sample_subset(samples)
+    samples <- assert_sample_subset(dplyr::collect(samples))
+    sinfo <- sinfo |>
+      dplyr::filter(
+        .data$dataset %in% samples$dataset & .data$sample_id %in% samples$sample_id
+      ) |>
+      dplyr::collect()
     sinfo <- dplyr::semi_join(sinfo, samples, by = c("dataset", "sample_id"))
     if (nrow(sinfo) == 0L) {
       return(.empty_sample_covariates(x))
@@ -465,6 +470,7 @@ fetch_sample_covariates.FacileArchs4DataSet <- function(
   } else {
     assert_character(covariates)
     covariates <- setdiff(covariates, c("dataset", "sample_id"))
+    # browser()
     bad.covs <- setdiff(covariates, all.covs)
     if (length(bad.covs)) {
       warning("Unknown sample covariates: ", paste(bad.covs, collapse = ","))
@@ -486,7 +492,9 @@ covariate_definitions.FacileArchs4DataSet <- function(x, as.list = TRUE, ...) {
 
   # sample table is huge, and it's not so informative, so just recalculatre
   # eav_metadata based on first few columns
-  out <- eav_metadata_create(samples(x)[1:5, ])
+  out <- samples(x) |>
+    dplyr::collect(n = 5) |>
+    eav_metadata_create()
   if (!as.list) {
     out <- lapply(names(out), function(name) {
       i <- out[[name]]

@@ -55,7 +55,7 @@ archs4_create_cache_files <- function(x, outdir = dirname(x), ...) {
   invisible(outfn)
 }
 
-#' Pull doen gse experiment information
+#' Pull down gse experiment information
 #' @export
 archs4_cache_experiment_details <- function(
   x,
