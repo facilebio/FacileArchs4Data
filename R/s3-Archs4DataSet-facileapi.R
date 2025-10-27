@@ -71,7 +71,7 @@ biocbox.archs4_facile_frame <- function(
   genes <- as.data.frame(features) |>
     dplyr::mutate(
       symbol = name,
-      feature_type = "esngid",
+      feature_type = "ensgid",
       source = "ensembl_v107"
     )
   rownames(genes) <- genes$feature_id
