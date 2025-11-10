@@ -2,7 +2,7 @@
 % Please edit documentation in R/cache.R
 \name{archs4_cache_experiment_details}
 \alias{archs4_cache_experiment_details}
-\title{Pull doen gse experiment information}
+\title{Pull down gse experiment information}
 \usage{
 archs4_cache_experiment_details(
   x,
@@ -12,5 +12,5 @@ archs4_cache_experiment_details(
 )
 }
 \description{
-Pull doen gse experiment information
+Pull down gse experiment information
 }

@@ -1,7 +1,7 @@
 Package: FacileArchs4Data
 Type: Package
 Title: Implements the FacileData API over ARCHS4 (v2) data objects.
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: c(
     person("Steve", "Lianoglou", , "slianoglou@gmail.com", c("aut", "cre")),
     person("Aratus Informatics, LLC", role = c("cph", "fnd")))
@@ -40,5 +40,5 @@ Remotes:
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 VignetteBuilder: knitr

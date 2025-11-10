@@ -8,7 +8,7 @@ archs4_split_metadata(
   x,
   column = "characteristics_ch1",
   delim_var = ",",
-  delim_key = ":",
+  delim_key = ": ",
   append = TRUE,
   clean_names = TRUE,
   keep_column = !append,
@@ -67,4 +67,16 @@ info.raw <- samples(a4m) |> dplyr::filter(dataset == "GSE198071")
 info <- archs4_split_metadata(info.raw)
 info |> select(h5idx:alignedreads)
 table(info$genotype)
+
+# this dataset has a `:` in the genotype columne we want to keep
+info.raw <- samples(a4m) |> dplyr::filter(dataset == "GSE116863")
+info <- archs4_split_metadata(info.raw)
+
+# some datasets have "sacred" names in the key/var combos, like 'sample_id'
+# in this case `_var` is appended to the end of it
+info.raw <- samples(a4h) |> dplyr::filter(dataset == "GSE172367,GSE172368")
+info <- archs4_split_metadata(info.raw)
+dplyr::select(info, dplyr::starts_with("sample_id"))
+
+# Human GSE57488 is returning columns in wrong order?
 }
