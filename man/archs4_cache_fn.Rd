@@ -2,9 +2,9 @@
 % Please edit documentation in R/cache.R
 \name{archs4_cache_fn}
 \alias{archs4_cache_fn}
-\title{File paths for cached objects created from an archs4 hdf5 file}
+\title{File paths for cached objects created from an archs4 hdf5 file.}
 \usage{
-archs4_cache_fn(x, outdir = NULL, ...)
+archs4_cache_fn(x, cache_dir = NULL, ...)
 }
 \arguments{
 \item{x}{the path to an archs4 data file}
@@ -13,7 +13,9 @@ archs4_cache_fn(x, outdir = NULL, ...)
 Defaults to \code{dirname(x)}}
 }
 \description{
-File paths for cached objects created from an archs4 hdf5 file
+The name of the cache file that is generated does not relate to the file
+name of the hdf5 file, but rather the creation date and species information
+that is stored from the metadata within the hdf5 file.
 }
 \examples{
 archs4_cache_fn("~/workspace/data/archs4/v2.6/mouse_gene_v2.6.h5")

@@ -16,8 +16,29 @@
   if (as_list) as.list(meta) else meta
 }
 
+#' Guess the speices from the hdf5 file ensembl identifiers used
 #' @noRd
-.load_archs4_features <- function(path, species, verbose = FALSE, ...) {
+.hdf5_guess_species <- function(path, ...) {
+  checkmate::assert_file_exists(path)
+  sapply(path, function(p) {
+    xx <- .hdf5_group_load_table(p, "meta/genes", rows = 1)
+    out <- NULL
+    if (grepl("ENSG\\d+$", xx$ensembl_gene)) {
+      out <- "human"
+    } else if (grepl("ENSMUSG\\d+$", xx$ensembl_gene)) {
+      out <- "mouse"
+    } else {
+      stop("Can't figure out species")
+    }
+    out
+  })
+}
+
+#' @noRd
+.load_archs4_features <- function(path, species = NULL, verbose = FALSE, ...) {
+  if (is.null(species)) {
+    species <- .hdf5_guess_species(path)
+  }
   tictoc::tic("load features")
   out <- .hdf5_group_load_table(path, "meta/genes")
   tictoc::toc(quiet = !verbose)
@@ -40,6 +61,7 @@
     rewrite_cache = FALSE,
     sample_cache_path = NULL,
     verbose = FALSE,
+    cache_dir = NULL,
     ...,
     .duckdb = FALSE
 ) {
@@ -82,9 +104,15 @@
   source <- "h5"
 
   if (is.null(sample_cache_path)) {
-    sample_cache_path <- archs4_cache_fn(path, dirname(path))$samples
+    sample_cache_path <- archs4_cache_fn(path, cache_dir = cache_dir)$samples
   }
-  assert_directory_exists(dirname(sample_cache_path), "w")
+
+  cdir <- dirname(sample_cache_path)
+  if (!dir.exists(cdir)) {
+    if (!dir.create(cdir)) {
+      stop("Could not make cache directory: ", cdir)
+    }
+  }
 
   if (!file.exists(sample_cache_path) || rewrite_cache) {
     out <- .hdf5_group_load_table(path, "meta/samples", columns = NULL) |>
@@ -133,7 +161,12 @@
 }
 
 #' @noRd
-.hdf5_group_load_table <- function(x, group = "meta/genes", columns = NULL) {
+.hdf5_group_load_table <- function(
+  x,
+  group = "meta/genes",
+  columns = NULL,
+  rows = NULL
+) {
   group_info <- .hdf5_group_info(x, group)
   if (is.character(columns)) {
     invalid <- setdiff(columns, group_info$name)
@@ -147,10 +180,16 @@
     keep <- group_info$name
   }
 
+  index <- if (checkmate::test_integerish(rows)) as.integer(rows) else NULL
+
   info <- lapply(keep, function(vname) {
     info <- dplyr::filter(group_info, .data$name == .env$vname)
-    vals <- rhdf5::h5read(x, paste0(group, "/", info$name),
-                          bit64conversion = "double")
+    vals <- rhdf5::h5read(
+      x,
+      paste0(group, "/", info$name),
+      index = index,
+      bit64conversion = "double"
+    )
     if (info$dclass == "INTEGER") {
       vals <- as.integer(vals)
     } else if (info$dclass == "FLOAT") {

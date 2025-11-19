@@ -12,6 +12,7 @@ FacileArchs4DataSet <- function(
   ...,
   species = NULL,
   data_dir = getOption("archs4.data_dir", NULL),
+  cache_dir = NULL,
   use_cache = TRUE,
   remove_sc = TRUE,
   threshold_sc = 0.5,
@@ -20,7 +21,7 @@ FacileArchs4DataSet <- function(
   if (!test_file_exists(x, extension = c("h5", "hdf5"))) {
     x <- match.arg(x, c("human", "mouse"))
     species <- x
-    info <- archs4_dir_info(data_dir) |>
+    info <- archs4_dir_info(data_dir, cache_dir = cache_dir) |>
       dplyr::filter(.data$species == .env$species)
     if (nrow(info) == 0L) {
       stop("Can not archs4 hdf5 file for species: ", species)
@@ -58,6 +59,7 @@ FacileArchs4DataSet <- function(
     use_cache = TRUE,
     sample_cache_path = out$path.sample_cache,
     create_cache = create_cache,
+    cache_dir = cache_dir,
     .duckdb = .duckdb,
     ...
   )
@@ -212,6 +214,8 @@ archs4_meta <- function(
     assert_file_exists(x, extension = "h5")
     meta <- lapply(x, .load_archs4_metadata)
   }
+  # the meta table doesn't store mouse/human, so let's pull that
+
   if (is.null(variable) || length(variable) == 0L) {
     variable <- names(meta[[1L]])
   }

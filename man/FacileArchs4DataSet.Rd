@@ -9,6 +9,7 @@ FacileArchs4DataSet(
   ...,
   species = NULL,
   data_dir = getOption("archs4.data_dir", NULL),
+  cache_dir = NULL,
   use_cache = TRUE,
   remove_sc = TRUE,
   threshold_sc = 0.5,

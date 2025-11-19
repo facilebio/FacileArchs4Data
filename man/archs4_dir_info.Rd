@@ -4,7 +4,12 @@
 \alias{archs4_dir_info}
 \title{List the archs4 files in a directory}
 \usage{
-archs4_dir_info(x = getOption("archs4.data_dir"), ...)
+archs4_dir_info(
+  x = getOption("archs4.data_dir"),
+  cache_dir = file.path(x, "cache"),
+  hdf5_suffix = "h5",
+  ...
+)
 }
 \arguments{
 \item{x}{the directory to look inside}
@@ -12,4 +17,11 @@ archs4_dir_info(x = getOption("archs4.data_dir"), ...)
 \description{
 archs4-related files need to have \code{"moue"} or \code{"human"} in their
 filename.
+}
+\details{
+Note that the \code{creation_date} column is extracted from the hdf5 file, so
+this is the source of truth for the version of this data file. It is
+not the same as the date listed on the website, for instance on 2025-11-14
+the release of the gene-level datafile is 2025-11-11, but the hdf5 file
+has a creation date of 2025-11-06
 }

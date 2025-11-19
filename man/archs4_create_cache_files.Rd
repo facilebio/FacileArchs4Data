@@ -3,9 +3,13 @@
 \name{archs4_create_cache_files}
 \alias{archs4_create_cache_files}
 \title{Save the samples and the gene feature info for an archs4 dataset as paruqet
-files to make load quicker.}
+files to make loading quicker.}
 \usage{
-archs4_create_cache_files(x, outdir = dirname(x), ...)
+archs4_create_cache_files(
+  x = getOption("archs4.data_dir"),
+  cache_dir = dirname(x),
+  ...
+)
 }
 \arguments{
 \item{x}{the path to the hdf5 file}

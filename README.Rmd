@@ -17,34 +17,107 @@ knitr::opts_chunk$set(
 
 # FacileArchs4Data
 
-This package is a work in progress and aims to implement the Facile API over
-the [ARCHS4][] (v2) datasets.
+Implements facile access over local copies of [ARCHS4][] (v2) datasets.
+Quickly slice and dice samples and studies, and effortlessly retrieve expression
+data to perform analyses with the [FacileAnalysis][facileanalysis] or standard
+Bioconductor workflows.
 
-Currently the package doesn't provide much functionality except for easy
-wrappers to construct bioconductor expression containers (DGEList,
-SummarizedExperiment, etc.) out of whatever subset of samples and genes
-that you like.
+**This package is a work in progress.**
 
 [arcsh4]: https://archs4.org/
+[facileanalysis]: https://github.com/facilebio/FacileAnalysis
+
+You will need to install the package, download the archs4 hdf5 files, and
+configure this package for use.
 
 ## Installation
 
-You'll need to download the archs4 hdf5 files yourself form their
-[download page][archs4dl]. I put them in versioned directories somewhere on my
-system, like:
 
-```
-~/workspace/data/archs4/v2.6/human_gene_v2.6.h5
-~/workspace/data/archs4/v2.6/mouse_gene_v2.6.h5
-```
-
-Then install this package from github:
+Install the package from GitHub
 
 ```r
 pak::pak("facilebio/FacileArchs4Data")
+library(FacileArchs4Data)
 ```
 
+## Download Data
+
+You'll need to [download](archs4dl) the archs4 hdf5 files to a folder on your
+local filesystem (`ARCHS4DIR`). Rename these files to include the date of
+their release (highglighted yellow here from their [download](archs4dl) page):
+
+[![archs4dlimage](man/figures/archs4-dl-page.png)
+
+Let's say:
+
+```bash
+export ARCHS4DIR="~/workspace/data/archs4"
+cd $ARCHS4DIR
+curl -O https://s3.dev.maayanlab.cloud/archs4/files/mouse_gene_v2.latest.h5
+curl -O https://s3.dev.maayanlab.cloud/archs4/files/mouse_gene_v2.latest.h5
+```
+
+more complex
+
+```bash
+export ARCHS4DIR="~/workspace/data/archs4"
+cd $ARCHS4DIR
+curl - \
+  2025-11-11__mouse_gene_v2.latest.h5 \
+  https://s3.dev.maayanlab.cloud/archs4/files/mouse_gene_v2.latest.h5
+curl -o \
+  2025-11-11__human_gene_v2.latest.h5 \
+  https://s3.dev.maayanlab.cloud/archs4/files/mouse_gene_v2.latest.h5
+```
+
+Note that the date of release listed on the file doesn't not always match the
+date that is "baked into" the hdf5 file itself. After downloading these files
+you can call `FacileArchs4Data::archs4_dir_info("~/workspace/data/archs4") and
+look at the `creation_date` column. The files that were released on 2025-11-11
+have an internal creation date of `2025-11-06`.
+
 [archs4dl]: https://archs4.org/download
+
+## Configuraton
+
+Your life will be easier if you set the `archs4.data_dir` R option to your
+`$ARCHS4DIR`. To do so, you can add this line to your `~/.Rprofile` file:
+
+```r
+options(archs4.data_dir = "~/workspace/data/archs4")
+```
+
+An easy way to open your `~/.Rprofile` file is to use the {usethis} package:
+
+```r
+usethis::edit_r_profile()
+```
+
+For snappier slicing and dicing into these hdf5 files, there are some cache
+files to creat.
+
+## Create Cache Files
+
+Along with the gene-level counts assay matrix, the hdf5 files also store
+the sample level metadata for the ncbi/geo samples along with gene-level
+metadata.
+
+To make slicing and dicing data out of the hdf5 quicker, we pull out this
+metadata to parquet files.
+
+Running the command below will, by default, create a `${ARCHS4DIR}/cache`
+directory, and serialize parquet files into there for each of the arcsh4
+hdf5 (`*.h5`) files  in `${ARCHS4DIR}`
+
+```r
+
+```
+
+```r
+# This wil default to getOption("archs4.data_dir"), but just being
+# explicit here
+archs4_create_sample_cache("~/workspace/data/archs4")
+```
 
 ## Usage
 
@@ -122,8 +195,8 @@ Often, the sample-level metadata you will be most interested will be in the
 
 ```{r}
 set.seed(0xBEEF)
-samples |> 
-  sample_n(6) |> 
+samples |>
+  sample_n(6) |>
   select(sample, title, source_name_ch1)
 ```
 
@@ -133,13 +206,13 @@ Let's great a "group" column with the affected status, and then use the
 for these samples and turn all of it into a DGEList for downstream analysis.
 
 ```{r}
-y <- samples |> 
+y <- samples |>
   mutate(
     # extract control/parksinson & remove the title column
     group = sub(" .*", "", title),
     # the "'" to make `group` a well behaved R variable
     group = sub("'", "", group)
-  ) |> 
+  ) |>
   biocbox(class = "DGEList")
 ```
 
@@ -166,14 +239,14 @@ viz(ypca, color_aes = "group")
 ### Differential Expressoin Analysis
 
 ```{r}
-ydge <- yf |> 
-  flm_def(covariate = "group", numer = "Parkinsons", denom = "Control") |> 
+ydge <- yf |>
+  flm_def(covariate = "group", numer = "Parkinsons", denom = "Control") |>
   fdge(method = "voom")
 ```
 
 ```{r}
-ydge |> 
-  tidy() |> 
+ydge |>
+  tidy() |>
   ggplot(aes(x = logFC, y = -log10(padj))) +
   geom_point(alpha = 0.8) +
   xlim(-3, 3)
