@@ -23,7 +23,8 @@ biocbox.archs4_facile_frame <- function(
   sample_covariates = NULL,
   normalized = FALSE,
   with_h5idx = FALSE,
-  ...
+  ...,
+  strip_dataset_prefix = FALSE
 ) {
   x <- assert_class(x, "archs4_facile_frame") |> dplyr::collect()
   assert_character(x$dataset)
@@ -67,6 +68,10 @@ biocbox.archs4_facile_frame <- function(
       colnames(A)
     )
   )
+
+  if (strip_dataset_prefix) {
+    colnames(A) <- sub("GSE.*?__", "", colnames(A))
+  }
 
   genes <- as.data.frame(features) |>
     dplyr::mutate(
@@ -114,7 +119,7 @@ biocbox.archs4_facile_frame <- function(
   } else if (class == "SummarizedExperiment") {
     reqpkg("SummarizedExperiment")
     out <- SummarizedExperiment::SummarizedExperiment(
-      assays = list(counts = out$A),
+      assays = list(counts = out$assay_data),
       rowData = out$features,
       colData = out$samples
     )
